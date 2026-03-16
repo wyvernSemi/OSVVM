@@ -48,6 +48,7 @@ library IEEE ;
   use IEEE.math_real.all ;
 
   use work.AlertLogPkg.all ;
+  use work.LanguageSupport2019Pkg.all ; 
   
 package MemorySupportPkg is
 
@@ -56,7 +57,7 @@ package MemorySupportPkg is
   -- -----------------------------------------------
   -- Memory Policy X
   --   Maintains fidelity of X and U
-  --   Each integer value stores 16 bits of data and 16 bits o X and U
+  --   Each integer value stores HALF_WORD_WIDTH bits of data and HALF_WORD_WIDTH bits o X and U
   --   Bit size unlimited
   -- 
   subtype  MemoryBaseType_X is integer_vector ;
@@ -68,7 +69,7 @@ package MemorySupportPkg is
   -- -----------------------------------------------
   -- Memory Policy NoX
   --   X and U are stored as a 0
-  --   Each integer value stores 32 bits of data
+  --   Each integer value stores WORD_WIDTH bits of data
   --   Bit size unlimited
   --   For larger word widths, uses half storage as X
   -- 
@@ -94,37 +95,40 @@ end MemorySupportPkg ;
 
 package body MemorySupportPkg is 
 
+  constant WORD_WIDTH       : integer := INTEGER_WIDTH ; 
+  constant HALF_WORD_WIDTH  : integer := WORD_WIDTH / 2 ; 
+
   ------------------------------------------------------------
   -- Memory Policy X
   --   Maintains fidelity of X and U
-  --   Each integer value stores 16 bits of data and 16 bits o X and U
+  --   Each integer value stores HALF_WORD_WIDTH bits of data and HALF_WORD_WIDTH bits o X and U
   ------------------------------------------------------------
   ------------------------------------------------------------
   function SizeMemoryBaseType_X(Size : integer) return integer is  
   ------------------------------------------------------------
   begin
-    return integer(Ceil(real(Size)/16.0)) ; 
+    return integer(Ceil(real(Size)/real(HALF_WORD_WIDTH))) ; 
   end function SizeMemoryBaseType_X ; 
   
   ------------------------------------------------------------
   function ToMemoryBaseType_X(Slv : std_logic_vector ; Size : integer) return integer_vector is 
   ------------------------------------------------------------
-    variable NormalizedSlv : std_logic_vector(Size*16-1 downto 0) ;
-    variable Bits16        : std_logic_vector(15 downto 0) ;
-    variable BitIsX        : std_logic_vector(15 downto 0) ; 
-    variable BitVal        : std_logic_vector(15 downto 0) ;
+    variable NormalizedSlv : std_logic_vector(Size*HALF_WORD_WIDTH-1 downto 0) ;
+    variable BitsToEncode  : std_logic_vector((HALF_WORD_WIDTH -1) downto 0) ;
+    variable BitIsX        : std_logic_vector((HALF_WORD_WIDTH -1) downto 0) ; 
+    variable BitVal        : std_logic_vector((HALF_WORD_WIDTH -1) downto 0) ;
     variable result        : integer_vector (Size-1 downto 0) ; 
   begin
-    NormalizedSlv := Resize(Slv, Size*16) ; 
+    NormalizedSlv := Resize(Slv, Size*HALF_WORD_WIDTH) ; 
     for MemIndex in result'reverse_range loop 
-      Bits16 := NormalizedSlv(16*MemIndex+15 downto 16*MemIndex) ;
-      for BitIndex in 0 to 15 loop
-        if Is_X(Bits16(BitIndex)) then 
+      BitsToEncode := NormalizedSlv(HALF_WORD_WIDTH*MemIndex+(HALF_WORD_WIDTH-1) downto HALF_WORD_WIDTH*MemIndex) ;
+      for BitIndex in 0 to (HALF_WORD_WIDTH-1) loop
+        if Is_X(BitsToEncode(BitIndex)) then 
           BitIsX(BitIndex) := '1' ; 
-          BitVal(BitIndex) := '1' when Bits16(BitIndex) = 'U' else '0' ;
+          BitVal(BitIndex) := '1' when BitsToEncode(BitIndex) = 'U' else '0' ;
         else 
           BitIsX(BitIndex) := '0' ; 
-          BitVal(BitIndex) := Bits16(BitIndex) ;
+          BitVal(BitIndex) := BitsToEncode(BitIndex) ;
         end if ; 
       end loop ; 
       result(MemIndex) := to_integer(signed(BitIsX & BitVal)) ; 
@@ -137,21 +141,21 @@ package body MemorySupportPkg is
   ------------------------------------------------------------
     constant NumIntegers   : integer := Mem'length ; 
     alias    NormalizedMem : integer_vector(NumIntegers-1 downto 0) is Mem ; 
-    variable NormalizedSlv : std_logic_vector(NumIntegers*16-1 downto 0) ;
-    variable Bits16        : std_logic_vector(15 downto 0) ;
-    variable BitIsX        : std_logic_vector(15 downto 0) ; 
-    variable BitVal        : std_logic_vector(15 downto 0) ;
+    variable NormalizedSlv : std_logic_vector(NumIntegers*HALF_WORD_WIDTH-1 downto 0) ;
+    variable BitsToDecode  : std_logic_vector((HALF_WORD_WIDTH-1) downto 0) ;
+    variable BitIsX        : std_logic_vector((HALF_WORD_WIDTH-1) downto 0) ; 
+    variable BitVal        : std_logic_vector((HALF_WORD_WIDTH-1) downto 0) ;
   begin
     for MemIndex in NormalizedMem'reverse_range loop 
-      (BitIsX, BitVal) := std_logic_vector(to_signed(NormalizedMem(MemIndex), 32)) ;
-      for BitIndex in 0 to 15 loop
+      (BitIsX, BitVal) := std_logic_vector(to_signed(NormalizedMem(MemIndex), WORD_WIDTH)) ;
+      for BitIndex in 0 to (HALF_WORD_WIDTH-1) loop
         if BitIsX(BitIndex) = '1' then 
-          Bits16(BitIndex) := 'U' when BitVal(BitIndex) = '1' else 'X' ;
+          BitsToDecode(BitIndex) := 'U' when BitVal(BitIndex) = '1' else 'X' ;
         else
-          Bits16(BitIndex) := BitVal(BitIndex) ; 
+          BitsToDecode(BitIndex) := BitVal(BitIndex) ; 
         end if ;      
       end loop ;
-      NormalizedSlv(16*MemIndex+15 downto 16*MemIndex) := Bits16 ;
+      NormalizedSlv(HALF_WORD_WIDTH*MemIndex+(HALF_WORD_WIDTH-1) downto HALF_WORD_WIDTH*MemIndex) := BitsToDecode ;
     end loop ; 
     return NormalizedSlv(Size-1 downto 0) ; 
   end function FromMemoryBaseType_X ; 
@@ -168,31 +172,31 @@ package body MemorySupportPkg is
   ------------------------------------------------------------
   -- Memory Policy NoX
   --   X and U are stored as a 0
-  --   Each integer value stores 32 bits of data
+  --   Each integer value stores WORD_WIDTH bits of data
   ------------------------------------------------------------
   ------------------------------------------------------------
   function SizeMemoryBaseType_NoX(Size : integer) return integer is  
   ------------------------------------------------------------
   begin
-    return integer(Ceil(real(Size)/32.0)) ; 
+    return integer(Ceil(real(Size)/real(WORD_WIDTH))) ; 
   end function SizeMemoryBaseType_NoX ; 
   
   ------------------------------------------------------------
   function ToMemoryBaseType_NoX(Slv : std_logic_vector ; Size : integer) return integer_vector is 
   ------------------------------------------------------------
-    variable NormalizedSlv : std_logic_vector(Size*32-1 downto 0) ;
-    variable Bits32        : std_logic_vector(31 downto 0) ;
-    variable BitVal        : std_logic_vector(31 downto 0) ;
+    variable NormalizedSlv : std_logic_vector(Size*WORD_WIDTH-1 downto 0) ;
+    variable BitsToEncode  : std_logic_vector((WORD_WIDTH-1) downto 0) ;
+    variable BitVal        : std_logic_vector((WORD_WIDTH-1) downto 0) ;
     variable result        : integer_vector (Size-1 downto 0) ; 
   begin
-    NormalizedSlv := Resize(Slv, Size*32) ; 
+    NormalizedSlv := Resize(Slv, Size*WORD_WIDTH) ; 
     for MemIndex in result'reverse_range loop 
-      Bits32 := NormalizedSlv(32*MemIndex+31 downto 32*MemIndex) ;
-      for BitIndex in 0 to 31 loop
-        if Is_X(Bits32(BitIndex)) then 
+      BitsToEncode := NormalizedSlv(WORD_WIDTH*MemIndex+(WORD_WIDTH-1) downto WORD_WIDTH*MemIndex) ;
+      for BitIndex in 0 to (WORD_WIDTH-1) loop
+        if Is_X(BitsToEncode(BitIndex)) then 
           BitVal(BitIndex) := '0' ;
         else 
-          BitVal(BitIndex) := Bits32(BitIndex) ;
+          BitVal(BitIndex) := BitsToEncode(BitIndex) ;
         end if ; 
       end loop ; 
       result(MemIndex) := to_integer(signed(BitVal)) ; 
@@ -205,13 +209,13 @@ package body MemorySupportPkg is
   ------------------------------------------------------------
     constant NumIntegers   : integer := Mem'length ; 
     alias    NormalizedMem : integer_vector(NumIntegers-1 downto 0) is Mem ; 
-    variable NormalizedSlv : std_logic_vector(NumIntegers*32-1 downto 0) ;
-    variable Bits32        : std_logic_vector(31 downto 0) ;
-    variable BitVal        : std_logic_vector(31 downto 0) ;
+    variable NormalizedSlv : std_logic_vector(NumIntegers*WORD_WIDTH-1 downto 0) ;
+    variable BitsToDecode  : std_logic_vector((WORD_WIDTH-1) downto 0) ;
+    variable BitVal        : std_logic_vector((WORD_WIDTH-1) downto 0) ;
   begin
     for MemIndex in NormalizedMem'reverse_range loop 
-      Bits32 := std_logic_vector(to_signed(NormalizedMem(MemIndex), 32)) ;
-      NormalizedSlv(32*MemIndex+31 downto 32*MemIndex) := Bits32 ;
+      BitsToDecode := std_logic_vector(to_signed(NormalizedMem(MemIndex), WORD_WIDTH)) ;
+      NormalizedSlv(WORD_WIDTH*MemIndex+(WORD_WIDTH-1) downto WORD_WIDTH*MemIndex) := BitsToDecode ;
     end loop ; 
     return NormalizedSlv(Size-1 downto 0) ; 
   end function FromMemoryBaseType_NoX ; 
@@ -236,7 +240,7 @@ package body MemorySupportPkg is
   ------------------------------------------------------------
   begin
     -- would be better as an alert, but not worth the pain since this is deprecated
-    assert Size < 32 report "MemoryPkg.MemInit/NewID.  DataWidth = " & to_string(Size) & " must be < 32 " severity FAILURE ; 
+    assert Size < WORD_WIDTH report "MemoryPkg.MemInit/NewID.  DataWidth = " & to_string(Size) & " must be < WORD_WIDTH " severity FAILURE ; 
     return 1 ; 
   end function SizeMemoryBaseType_orig ; 
 
