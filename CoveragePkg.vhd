@@ -85,7 +85,7 @@
 --    06/2011:  2.1        Removed signal based coverage modeling
 --    04/2011:  2.0        Added protected type based data structure:  CovPType
 --    02/2011:  1.1        Added GetMinCov, GetMaxCov, CountCovHoles, GetCovHole
---    02/2011:  1.0        Changed CoverBinType to facilitage long term support of cross coverage
+--    02/2011:  1.0        Changed CoverBinType to facilitate long term support of cross coverage
 --    09/2010              Release in SynthWorks' VHDL Testbenches and Verification classes
 --    06/2010:  0.1        Initial revision
 --
@@ -101,7 +101,7 @@
 --
 --  This file is part of OSVVM.
 --
---  Copyright (c) 2010 - 2024 by SynthWorks Design Inc.
+--  Copyright (c) 2010 - 2025 by SynthWorks Design Inc.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
