@@ -22,6 +22,7 @@
 --
 --  Revision History:
 --    Date      Version    Description
+--    05/2026   2026.05    Added GetNumIDs and WriteAllBins
 --    02/2025   2025.02    Added NewReqID.
 --                         FindBinIndex
 --                         GetBinAction, GetPointAction
@@ -330,6 +331,9 @@ package CoveragePkg is
     PrintParent         : AlertLogPrintParentType := PRINT_NAME_AND_PARENT
   ) return CoverageIDType ;
 
+  ------------------------------------------------------------
+  impure function GetNumIDs return integer ;
+    
   ------------------------------------------------------------
   -- /////////////////////////////////////////
   --  Coverage Global Settings Common to All Coverage Models
@@ -662,6 +666,7 @@ package CoveragePkg is
   procedure WriteBin (ID : CoverageIDType; LogLevel : LogType ) ;  -- With LogLevel
   procedure WriteBin (ID : CoverageIDType; FileName : string;  OpenKind : File_Open_Kind := APPEND_MODE) ;
   procedure WriteBin (ID : CoverageIDType; LogLevel : LogType; FileName : string; OpenKind : File_Open_Kind := APPEND_MODE) ;
+  procedure WriteAllBins (FileName : string := "" ; OpenKind : File_Open_Kind := WRITE_MODE) ;
 
   ------------------------------------------------------------
   procedure WriteCovHoles (ID : CoverageIDType; LogLevel : LogType := ALWAYS ) ;
@@ -861,11 +866,8 @@ package CoveragePkg is
       ReportMode          : AlertLogReportModeType ;
       Search              : NameSearchType ;
       PrintParent         : AlertLogPrintParentType
---!!      ParentID            : AlertLogIDType          := OSVVM_COVERAGE_ALERTLOG_ID ;
---!!      ReportMode          : AlertLogReportModeType  := ENABLED ;
---!!      Search              : NameSearchType          := PRIVATE_NAME ;
---!!      PrintParent         : AlertLogPrintParentType := PRINT_NAME_AND_PARENT
     ) return CoverageIDType ;
+
     impure function GetNumIDs return integer ;
 
     ------------------------------------------------------------
@@ -1208,6 +1210,7 @@ package CoveragePkg is
     procedure WriteBin (ID : CoverageIDType; LogLevel : LogType ) ;  -- With LogLevel
     procedure WriteBin (ID : CoverageIDType; FileName : string;  OpenKind : File_Open_Kind := APPEND_MODE) ;
     procedure WriteBin (ID : CoverageIDType; LogLevel : LogType; FileName : string; OpenKind : File_Open_Kind := APPEND_MODE) ;
+    procedure WriteAllBins (FileName : string := "" ; OpenKind : File_Open_Kind := WRITE_MODE) ;
 
     ------------------------------------------------------------
     procedure DumpBin (ID : CoverageIDType; LogLevel : LogType := DEBUG) ;
@@ -1902,7 +1905,7 @@ package body CoveragePkg is
   function CalcPercentCov( Count : integer ; AtLeast : integer ) return real is
   -- package local, called by MergeBin, InsertBin, ClearCov, ReadCovDbDatabase
   ------------------------------------------------------------
-    variable PercentCov : real ;
+--sig    variable PercentCov : real ;
   begin
     if AtLeast > 0 then
       return real(Count)*100.0/real(AtLeast) ;
@@ -2935,7 +2938,7 @@ package body CoveragePkg is
 --!! Deprecated       
       WeightScale : real := 1.0
     ) is
-      variable buf : line ;
+--sig      variable buf : line ;
     begin
       CovStructPtr(ID.ID).WeightMode := WeightMode ;
       
@@ -4038,7 +4041,7 @@ package body CoveragePkg is
     impure function GetHoleBinVal (ID : CoverageIDType; ReqHoleNum : integer ; PercentCov : real  ) return RangeArrayType is
     ------------------------------------------------------------
       variable HoleCount : integer := 0 ;
-      variable buf : line ;
+--sig      variable buf : line ;
     begin
       CovLoop : for i in 1 to CovStructPtr(ID.ID).NumBins loop
         if CovStructPtr(ID.ID).CovBinPtr(i).action = COV_COUNT and CovStructPtr(ID.ID).CovBinPtr(i).PercentCov < PercentCov then
@@ -4433,14 +4436,12 @@ package body CoveragePkg is
     procedure WriteBinName (ID : CoverageIDType; variable buf : inout line; S : string ; Prefix : string := "%% " ) is
     ------------------------------------------------------------
       variable Message : MessageStructPtrType ;
-      variable MessageIndex : integer := 1 ;
---      variable buf : line ;
+--sig      variable MessageIndex : integer := 1 ;
     begin
       Message := CovStructPtr(ID.ID).CovMessage ;
       if Message = NULL then
         write(buf, Prefix & S & GetCovModelName(ID)) ; -- Print name when no message
         write(buf, "" & LF) ;
---        writeline(f, buf) ;
       else
         if CovStructPtr(ID.ID).CovName /= NULL then
           -- Print Name if set
@@ -4541,32 +4542,15 @@ package body CoveragePkg is
     ------------------------------------------------------------
     procedure WriteBin (ID : CoverageIDType) is
     ------------------------------------------------------------
---!!      constant rWritePassFail   : OsvvmOptionsType := ResolveCovWritePassFail  (WritePassFailVar) ;
---!!      constant rWriteBinInfo    : OsvvmOptionsType := ResolveCovWriteBinInfo   (WriteBinInfoVar  ) ;
---!!      constant rWriteCount      : OsvvmOptionsType := ResolveCovWriteCount     (WriteCountVar    ) ;
---!!      constant rWriteAnyIllegal : OsvvmOptionsType := ResolveCovWriteAnyIllegal(WriteAnyIllegalVar) ;
-      -- constant rWritePrefix     : string         := ResolveOsvvmWritePrefix  (WritePrefixVar.GetOpt) ;
-      -- constant rPassName        : string         := ResolveOsvvmPassName     (PassNameVar.GetOpt  ) ;
-      -- constant rFailName        : string         := ResolveOsvvmFailName     (FailNameVar.GetOpt  ) ;
       variable buf              : line ;
     begin
       WriteBin (
         ID              => ID,
         buf             => buf,
---!!        WritePassFail   => rWritePassFail,
---!!        WriteBinInfo    => rWriteBinInfo,
---!!        WriteCount      => rWriteCount,
---!!        WriteAnyIllegal => rWriteAnyIllegal,
         WritePassFail   => WritePassFailVar,
         WriteBinInfo    => WriteBinInfoVar,
         WriteCount      => WriteCountVar,
         WriteAnyIllegal => WriteAnyIllegalVar,
---!!        WritePrefix     => rWritePrefix,
---!!        PassName        => rPassName,
---!!        FailName        => rFailName
---!!        WritePrefix     => ResolveOsvvmWritePrefix  (WritePrefixVar.GetOpt),
---!!        PassName        => ResolveOsvvmPassName     (PassNameVar.GetOpt  ),
---!!        FailName        => ResolveOsvvmFailName     (FailNameVar.GetOpt  )
         WritePrefix     => COVERAGE_PRINT_PREFIX,
         PassName        => COVERAGE_PASS_NAME,
         FailName        => COVERAGE_FAIL_NAME
@@ -4588,14 +4572,6 @@ package body CoveragePkg is
     ------------------------------------------------------------
     procedure WriteBin (ID : CoverageIDType; FileName : string;  OpenKind : File_Open_Kind := APPEND_MODE) is
     ------------------------------------------------------------
---!!      constant rWritePassFail    : OsvvmOptionsType := ResolveCovWritePassFail   (WritePassFailVar) ;
---!!      constant rWriteBinInfo     : OsvvmOptionsType := ResolveCovWriteBinInfo    (WriteBinInfoVar  ) ;
---!!      constant rWriteCount       : OsvvmOptionsType := ResolveCovWriteCount      (WriteCountVar    ) ;
---!!      constant rWriteAnyIllegal  : OsvvmOptionsType := ResolveCovWriteAnyIllegal (WriteAnyIllegalVar) ;
-      -- constant rWritePrefix      : string         := ResolveOsvvmWritePrefix   (WritePrefixVar.GetOpt) ;
-      -- constant rPassName         : string         := ResolveOsvvmPassName      (PassNameVar.GetOpt  ) ;
-      -- constant rFailName         : string         := ResolveOsvvmFailName      (FailNameVar.GetOpt  ) ;
---x      file     LocalWriteBinFile : text open OpenKind is FileName ;
       file LocalWriteBinFile : text ;
       variable buf               : line ;
     begin
@@ -4603,20 +4579,10 @@ package body CoveragePkg is
       WriteBin (
         ID              => ID,
         buf             => buf,
---!!        WritePassFail   => rWritePassFail,
---!!        WriteBinInfo    => rWriteBinInfo,
---!!        WriteCount      => rWriteCount,
---!!        WriteAnyIllegal => rWriteAnyIllegal,
         WritePassFail   => WritePassFailVar,
         WriteBinInfo    => WriteBinInfoVar,
         WriteCount      => WriteCountVar,
         WriteAnyIllegal => WriteAnyIllegalVar,
---!!        WritePrefix     => rWritePrefix,
---!!        PassName        => rPassName,
---!!        FailName        => rFailName
---!!        WritePrefix     => ResolveOsvvmWritePrefix  (WritePrefixVar.GetOpt),
---!!        PassName        => ResolveOsvvmPassName     (PassNameVar.GetOpt  ),
---!!        FailName        => ResolveOsvvmFailName     (FailNameVar.GetOpt  ),
         WritePrefix     => COVERAGE_PRINT_PREFIX,
         PassName        => COVERAGE_PASS_NAME,
         FailName        => COVERAGE_FAIL_NAME,
@@ -4642,6 +4608,49 @@ package body CoveragePkg is
         ) ;
       end if ;
     end procedure WriteBin ;  -- With LogLevel
+
+    ------------------------------------------------------------
+    procedure WriteAllBins (FileName : string := "" ; OpenKind : File_Open_Kind := WRITE_MODE) is
+    ------------------------------------------------------------
+      constant RESOLVED_FILE_NAME : string := ifelse(FileName = "", OSVVM_TEMP_OUTPUT_DIRECTORY & GetTestName & "_cov.txt", FileName) ;
+      file CovFile : text ;
+      variable buf : line ;
+    begin
+      file_open(CovFile, RESOLVED_FILE_NAME, OpenKind) ;
+      swrite(buf, "TestCase: "  & GetTestName  & LF) ;
+      swrite(buf, "Total Coverage: " & to_string(GetCov, 2) & LF) ;
+      writeline(CovFile, buf) ;
+--      WriteSettingsYaml(CovFile) ;
+--      swrite(buf, "Models: ") ;
+--      writeline(CovFile, buf) ;
+      for i in 1 to NumItems loop
+        if CovStructPtr(i).NumBins >= 1 then
+          if CovStructPtr(i).CovWeight >= 1 then
+            WriteBin (
+              ID              => CoverageIDType'(ID => i),
+              buf             => buf,
+              WritePassFail   => WritePassFailVar,
+              WriteBinInfo    => WriteBinInfoVar,
+              WriteCount      => WriteCountVar,
+              WriteAnyIllegal => WriteAnyIllegalVar,
+              WritePrefix     => COVERAGE_PRINT_PREFIX,
+              PassName        => COVERAGE_PASS_NAME,
+              FailName        => COVERAGE_FAIL_NAME,
+              UsingLocalFile  => TRUE
+            );
+            writeline(CovFile, buf) ;
+          end if ;
+        end if ;
+      end loop ;
+--!!      for i in 1 to NumItems loop
+--!!        if CovStructPtr(i).NumBins >= 1 then
+--!!          if CovStructPtr(i).CovWeight < 1 then
+--!!            WriteCovYaml(CoverageIDType'(ID => i), CovFile, GetTestName) ;
+--!!          end if ;
+--!!        end if ;
+--!!      end loop ;
+      file_close(CovFile) ;
+    end procedure WriteAllBins ;
 
     ------------------------------------------------------------
     -- Development only
@@ -5113,7 +5122,7 @@ package body CoveragePkg is
       variable buf              : line ;
       variable Empty            : boolean ;
       variable MultiLineComment : boolean := FALSE ;
-      variable ReadValid        : boolean ;
+--sig      variable ReadValid        : boolean ;
       variable FieldNameArray   : FieldNameArrayType(1 to NumRangeItems) ;
     begin
       ReadLoop : for FieldNameIndex in 1 to NumRangeItems loop 
@@ -5952,7 +5961,7 @@ package body CoveragePkg is
       constant Merge       : in  boolean := FALSE
     ) is
       variable buf            : line ;
-      variable FieldNameArray : FieldNameArrayType(1 to 20) ;
+--sig      variable FieldNameArray : FieldNameArrayType(1 to 20) ;
       constant ID             : integer := CovID.ID ;
       constant AlertLogID     : AlertLogIDType := CovStructPtr(ID).AlertLogID ;
     begin
@@ -6508,7 +6517,7 @@ package body CoveragePkg is
     impure function GetHoleBinVal (ID : CoverageIDType; ReqHoleNum : integer ; AtLeast : integer ) return RangeArrayType is
     ------------------------------------------------------------
       variable HoleCount : integer := 0 ;
-      variable buf : line ;
+--sig      variable buf : line ;
     begin
       CovLoop : for i in 1 to CovStructPtr(ID.ID).NumBins loop
 --        if CovStructPtr(ID.ID).CovBinPtr(i).action = COV_COUNT and CovStructPtr(ID.ID).CovBinPtr(i).Count < minimum(AtLeast, CovStructPtr(ID.ID).CovBinPtr(i).AtLeast) then
@@ -7559,7 +7568,7 @@ package body CoveragePkg is
       -- constant rWritePrefix     : string         := ResolveOsvvmWritePrefix  (WritePrefix,      WritePrefixVar.GetOpt) ;
       -- constant rPassName        : string         := ResolveOsvvmPassName     (PassName,         PassNameVar.GetOpt  ) ;
       -- constant rFailName        : string         := ResolveOsvvmFailName     (FailName,         FailNameVar.GetOpt  ) ;
-      variable buf, buf2 : line ;
+      variable buf : line ;
     begin
       WriteBin (
         ID              => COV_STRUCT_ID_DEFAULT,
@@ -8107,6 +8116,12 @@ package body CoveragePkg is
     return CoverageStore.NewID (Name, GOAL, ParentID, ReportMode, Search, PrintParent) ;
   end function NewReqID ;
 
+  ------------------------------------------------------------
+  impure function GetNumIDs return integer is
+  ------------------------------------------------------------
+  begin
+    return CoverageStore.GetNumIDs ;
+  end function GetNumIDs ;
 
   ------------------------------------------------------------
   -- /////////////////////////////////////////
@@ -8280,15 +8295,15 @@ package body CoveragePkg is
 
 
   ------------------------------------------------------------
-  procedure SetAlertLogID (ID : CoverageIDType; A : AlertLogIDType) is
-  begin
-    CoverageStore.SetAlertLogID (ID, A) ;
-  end procedure SetAlertLogID ;
-
-  procedure SetAlertLogID (ID : CoverageIDType; Name : string ; ParentID : AlertLogIDType := ALERTLOG_BASE_ID ; CreateHierarchy : Boolean := TRUE) is
-  begin
-    CoverageStore.SetAlertLogID (ID, Name, ParentID, CreateHierarchy) ;
-  end procedure SetAlertLogID ;
+--sig  procedure SetAlertLogID (ID : CoverageIDType; A : AlertLogIDType) is
+--sig  begin
+--sig    CoverageStore.SetAlertLogID (ID, A) ;
+--sig  end procedure SetAlertLogID ;
+--sig
+--sig  procedure SetAlertLogID (ID : CoverageIDType; Name : string ; ParentID : AlertLogIDType := ALERTLOG_BASE_ID ; CreateHierarchy : Boolean := TRUE) is
+--sig  begin
+--sig    CoverageStore.SetAlertLogID (ID, Name, ParentID, CreateHierarchy) ;
+--sig  end procedure SetAlertLogID ;
 
   impure function GetAlertLogID (ID : CoverageIDType) return AlertLogIDType is
   begin
@@ -9129,6 +9144,10 @@ package body CoveragePkg is
     CoverageStore.WriteBin (ID, LogLevel, FileName, OpenKind) ;
   end procedure WriteBin ;
 
+  procedure WriteAllBins (FileName : string := "" ; OpenKind : File_Open_Kind := WRITE_MODE) is
+  begin
+    CoverageStore.WriteAllBins (FileName, OpenKind) ;
+  end procedure WriteAllBins ;
 
   ------------------------------------------------------------
   procedure DumpBin (ID : CoverageIDType; LogLevel : LogType := DEBUG) is
@@ -9306,9 +9325,9 @@ package body CoveragePkg is
     variable BinInfo1, BinInfo2 : CovBinBaseType ;
     variable BinVal1, BinVal2 : RangeArrayType(1 to Bin1.GetBinValLength) ;
     variable buf : line ;
-    variable iAlertLogID : AlertLogIDType ;
+--sig    variable iAlertLogID : AlertLogIDType ;
   begin
-    iAlertLogID := Bin1.GetAlertLogID ;
+--sig    iAlertLogID := Bin1.GetAlertLogID ;
 
     NumBins1 := Bin1.GetNumBins ;
     NumBins2 := Bin2.GetNumBins ;
@@ -9363,7 +9382,7 @@ package body CoveragePkg is
   begin
     CompareBins(Bin1, Bin2, ErrorCount) ;
     iAlertLogID := Bin1.GetAlertLogID ;
-    AffirmIfEqual(ErrorCount, 0, "CompareBins(Bin1, Bin2, ErrorCount) " & Bin1.GetCovModelName & " and " & Bin2.GetCovModelName & " ErrorCount:") ;
+    AffirmIfEqual(iAlertLogID, ErrorCount, 0, "CompareBins(Bin1, Bin2, ErrorCount) " & Bin1.GetCovModelName & " and " & Bin2.GetCovModelName & " ErrorCount:") ;
   end procedure CompareBins ;
 
 
@@ -9379,9 +9398,9 @@ package body CoveragePkg is
     variable BinInfo1, BinInfo2 : CovBinBaseType ;
     variable BinVal1, BinVal2 : RangeArrayType(1 to GetBinValLength(Bin1)) ;
     variable buf : line ;
-    variable iAlertLogID : AlertLogIDType ;
+--sig    variable iAlertLogID : AlertLogIDType ;
   begin
-    iAlertLogID := GetAlertLogID(Bin1) ;
+--sig    iAlertLogID := GetAlertLogID(Bin1) ;
 
     NumBins1 := GetNumBins(Bin1) ;
     NumBins2 := GetNumBins(Bin2) ;
@@ -9455,7 +9474,7 @@ package body CoveragePkg is
   ) return CovBinType is
     variable iCovBin : CovBinType(1 to NumBin) ;
     variable TotalBins : integer ; -- either real or integer
-    variable rMax, rCurMin, rNumItemsInBin, rRemainingBins : real ; -- must be real
+--sig    variable rMax, rCurMin, rNumItemsInBin, rRemainingBins : real ; -- must be real
     variable iCurMin, iCurMax, NegMaxMinus1, RemainingBins, NumItemsInBin : integer ;
   begin
     if Min > Max then
