@@ -241,6 +241,8 @@ package body DynamicArrayGenericPkg is
     impure function IsEmpty       (ID : DynamicArrayIDType) return boolean ;  -- Does ID have storage
     impure function Deallocate    (ID : DynamicArrayIDType) return DynamicArrayIDType ; 
     impure function IsInitialized (ID : DynamicArrayIDType) return boolean ; -- ID Valid
+    -- Local to Package
+    impure function IdNotInUse    (ID : DynamicArrayIDType ; Name : string) return boolean ;
 
     ------------------------------------------------------------
     impure function GetSize     (ID : DynamicArrayIDType) return integer ;
@@ -345,8 +347,8 @@ package body DynamicArrayGenericPkg is
     end function IsInitialized ;
 
     ------------------------------------------------------------
-    --  Package Local  
-    impure function CopyNotInUse(ID : DynamicArrayIDType ; Name : string) return boolean is
+    -- Local to Package
+    impure function IdNotInUse(ID : DynamicArrayIDType ; Name : string) return boolean is
     ------------------------------------------------------------
       constant IdNum : integer := ID.IdNum ; 
     begin
@@ -361,11 +363,11 @@ package body DynamicArrayGenericPkg is
       end if ; 
       Alert("DynamicArray: " & Name & ", IdNum: " & to_string(ID.IdNum) & "  CopyNum: " & to_string(ID.CopyNum), FAILURE) ;
       return TRUE ; -- Not In USE
-    end function CopyNotInUse ; 
+    end function IdNotInUse ; 
 
     ------------------------------------------------------------
     -- Package Local
-    impure function NextIdNumber return integer is
+    impure function GetNextIdNumber return integer is
     ------------------------------------------------------------
       variable oldItemArrayPtr  : SingletonArrayPtrType ;
     begin
@@ -377,7 +379,7 @@ package body DynamicArrayGenericPkg is
         SingletonArrayPtr := new SingletonArrayType(1 to MaxItems) ;
         NumItems := 1 ;
       else 
-        AlertIfNotEqual(NumItems, SingletonArrayPtr'length, "NextIdNumber: NumItems /= SingletonArrayPtr'length") ;
+        AlertIfNotEqual(NumItems, SingletonArrayPtr'length, "GetNextIdNumber: NumItems /= SingletonArrayPtr'length") ;
         MaxItems := MaxItems + 32 ; 
         OldItemArrayPtr := SingletonArrayPtr ;
         SingletonArrayPtr := new SingletonArrayType(1 to MaxItems) ;
@@ -389,7 +391,7 @@ package body DynamicArrayGenericPkg is
         IdFifo.push(i) ;
       end loop ; 
       return NumItems ; 
-    end function NextIdNumber ;
+    end function GetNextIdNumber ;
 
     ------------------------------------------------------------
     impure function NewID (
@@ -407,7 +409,7 @@ package body DynamicArrayGenericPkg is
     begin
       ResolvedSize := Maximum(Size, INITIAL_ARRAY_SIZE) ;
       -- GrowNumberItems(SingletonArrayPtr, NumItems, 1, MIN_NUM_ITEMS) ;
-      IdNum := NextIdNumber ; 
+      IdNum := GetNextIdNumber ; 
       SingletonArrayPtr(IdNum) := new DynamicArrayRecType ;
 --      SingletonArrayPtr(IdNum).HeadIndexPtr := new integer_vector'(1 to ITERATOR_LENGTH_INIT => FIRST_INDEX) ; 
       SingletonArrayPtr(IdNum).IteratorPtr := new IteratorArrayType'(1 to ITERATOR_LENGTH_INIT => (FIRST_INDEX, FALSE)) ; 
@@ -431,7 +433,7 @@ package body DynamicArrayGenericPkg is
       variable OrigIteratorLength : integer ; 
       variable OldIteratorPtr, IteratorPtr : IteratorArrayPtrType ; 
     begin
-      if CopyNotInUse(SiblingID, "CopyID") then
+      if IdNotInUse(SiblingID, "CopyID") then
         return EMPTY_DYNAMIC_ARRAY_ID ; 
       end if ; 
       IdNum      := SiblingID.IdNum ; 
@@ -487,7 +489,7 @@ package body DynamicArrayGenericPkg is
       variable EndingIndex : natural ;
       variable IdNum : integer ;
     begin
-      if CopyNotInUse(ID, "Append") then
+      if IdNotInUse(ID, "Append") then
         return ; 
       end if ; 
       IdNum := ID.IdNum ; 
@@ -511,7 +513,7 @@ package body DynamicArrayGenericPkg is
       constant ArraySize     : natural := iValue'length ; 
       variable IdNum        : integer ;
     begin
-      if CopyNotInUse(ID, "Append") then
+      if IdNotInUse(ID, "Append") then
         return ; 
       end if ; 
       IdNum := ID.IdNum ; 
@@ -558,9 +560,6 @@ package body DynamicArrayGenericPkg is
       variable Result : ElementType ;
       variable StartingIndex : integer ; 
     begin
-      if CopyNotInUse(ID, "Get") then
-        return Result ; 
-      end if ; 
 --      StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex + Index ; 
       StartingIndex := FIRST_INDEX + Index ; 
       if CheckIndex(ID, StartingIndex) then 
@@ -581,9 +580,6 @@ package body DynamicArrayGenericPkg is
       variable Result : InternalArrayType(1 to NumValues) ;
       variable StartingIndex, EndingIndex : integer ;
     begin
-      if CopyNotInUse(ID, "Get") then
-        return Result ; 
-      end if ; 
   --    StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex + Index ; 
       StartingIndex := FIRST_INDEX + Index ; 
       EndingIndex   := StartingIndex + NumValues - 1 ; 
@@ -604,9 +600,6 @@ package body DynamicArrayGenericPkg is
     ) is
       variable StartingIndex : integer ; 
     begin
-      if CopyNotInUse(ID, "Set") then
-        return ; 
-      end if ; 
 --      StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex + Index ; 
       StartingIndex := FIRST_INDEX + Index ; 
       if CheckIndex(ID, StartingIndex) then 
@@ -625,9 +618,6 @@ package body DynamicArrayGenericPkg is
     ) is
       variable StartingIndex, EndingIndex : integer ; 
     begin
-      if CopyNotInUse(ID, "Set") then
-        return ; 
-      end if ; 
 --      StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex + Index ; 
       StartingIndex := FIRST_INDEX + Index ; 
       EndingIndex   := StartingIndex + iValue'length - 1 ; 
@@ -642,7 +632,7 @@ package body DynamicArrayGenericPkg is
     impure function IsEmpty   (ID : DynamicArrayIDType) return boolean is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "IsEmpty") then
+      if IdNotInUse(ID, "IsEmpty") then
         return TRUE ; 
       end if ; 
       return SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex >= SingletonArrayPtr(ID.IdNum).TailIndex ;
@@ -652,7 +642,7 @@ package body DynamicArrayGenericPkg is
     impure function GetIndex (ID : DynamicArrayIDType) return integer is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "GetIndex") then
+      if IdNotInUse(ID, "GetIndex") then
         return -1 ; 
       end if ; 
       return SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex ; 
@@ -662,7 +652,7 @@ package body DynamicArrayGenericPkg is
     impure function GetFirstIndex (ID : DynamicArrayIDType) return integer is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "GetFirstIndex") then
+      if IdNotInUse(ID, "GetFirstIndex") then
         return -1 ; 
       end if ; 
       return FIRST_INDEX ; 
@@ -673,7 +663,7 @@ package body DynamicArrayGenericPkg is
     -- With NumValues = 0, LastIndex is a reference to the next empty index
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "GetLastIndex") then
+      if IdNotInUse(ID, "GetLastIndex") then
         return FALSE ; 
       end if ; 
       return SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).TailIndex - NumValues ; 
@@ -684,7 +674,7 @@ package body DynamicArrayGenericPkg is
     ------------------------------------------------------------
       variable CurIndex : integer ; 
     begin
-      if CopyNotInUse(ID, "GetNextIndex") then
+      if IdNotInUse(ID, "GetNextIndex") then
         return FALSE ; 
       end if ; 
       CurIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex ; 
@@ -696,7 +686,7 @@ package body DynamicArrayGenericPkg is
     impure function HasNext   (ID : DynamicArrayIDType; NumValues : integer := 1) return boolean is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "HasNext") then
+      if IdNotInUse(ID, "HasNext") then
         return FALSE ; 
       end if ; 
       return SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex + NumValues <= SingletonArrayPtr(ID.IdNum).TailIndex ;
@@ -713,7 +703,7 @@ package body DynamicArrayGenericPkg is
       variable Result : ElementType ;
 --      variable IdNum        : integer ;
     begin
-      if CopyNotInUse(ID, "GetNext") then
+      if IdNotInUse(ID, "GetNext") then
         return Result ; 
       end if ; 
       StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex ;
@@ -743,7 +733,7 @@ package body DynamicArrayGenericPkg is
       -- variable EndingIndex   : natural ;
       -- variable IdNum        : integer ;
     begin
-      if CopyNotInUse(ID, "GetNext") then
+      if IdNotInUse(ID, "GetNext") then
         return Result ; 
       end if ; 
       StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex ;
@@ -773,7 +763,7 @@ package body DynamicArrayGenericPkg is
     ) return ElementType is
       variable StartingIndex : natural ;
     begin
-      if CopyNotInUse(ID, "SetNext") then
+      if IdNotInUse(ID, "SetNext") then
         return ; 
       end if ; 
       StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex ;
@@ -789,7 +779,7 @@ package body DynamicArrayGenericPkg is
     ) return InternalArrayType is
       variable StartingIndex : natural ;
     begin
-      if CopyNotInUse(ID, "SetNext") then
+      if IdNotInUse(ID, "SetNext") then
         return ; 
       end if ; 
       StartingIndex := SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex ;
@@ -801,7 +791,7 @@ package body DynamicArrayGenericPkg is
     impure function Deallocate(ID : DynamicArrayIDType) return DynamicArrayIDType is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "Deallocate") then
+      if IdNotInUse(ID, "Deallocate") then
         return EMPTY_DYNAMIC_ARRAY_ID ; 
       end if ; 
       SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).InUse := FALSE ; 
@@ -821,7 +811,7 @@ package body DynamicArrayGenericPkg is
     impure function GetSize (ID : DynamicArrayIDType) return integer is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "GetSize") then
+      if IdNotInUse(ID, "GetSize") then
         return -1 ; 
       end if ; 
       return SingletonArrayPtr(ID.IdNum).TailIndex - 
@@ -832,7 +822,7 @@ package body DynamicArrayGenericPkg is
     impure function GetCapacity (ID : DynamicArrayIDType) return integer is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "GetCapacity") then
+      if IdNotInUse(ID, "GetCapacity") then
         return -1 ; 
       end if ; 
       return SingletonArrayPtr(ID.IdNum).Capacity ;
@@ -842,7 +832,7 @@ package body DynamicArrayGenericPkg is
     procedure MakeEmpty (ID : DynamicArrayIDType) is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "GetCapacity") then
+      if IdNotInUse(ID, "GetCapacity") then
         return ; 
       end if ; 
       SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex := FIRST_INDEX ;
@@ -853,7 +843,7 @@ package body DynamicArrayGenericPkg is
     procedure SetIndex (ID : DynamicArrayIDType ; Index : integer := FIRST_INDEX) is
     ------------------------------------------------------------
     begin
-      if CopyNotInUse(ID, "SetIndex") then
+      if IdNotInUse(ID, "SetIndex") then
         return ; 
       end if ; 
       SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex := Index ;
@@ -958,7 +948,11 @@ package body DynamicArrayGenericPkg is
     ID        : DynamicArrayIDType ; 
     Index     : integer 
   ) return ElementType is
+    variable Result : ElementType ;
   begin
+    if DynamicArrayStore.IdNotInUse(ID, "Get") then
+      return Result ;  -- returning default value for type
+    end if ; 
     return DynamicArrayStore.Get(ID, Index) ;
   end function Get ;
 
@@ -967,7 +961,11 @@ package body DynamicArrayGenericPkg is
     Index     : integer ;
     NumValues : integer 
   ) return ArrayType is
+    variable Result : InternalArrayType(1 to NumValues) ;
   begin
+    if DynamicArrayStore.IdNotInUse(ID, "Get") then
+      return ArrayType(Result) ; 
+    end if ; 
 --    return ArrayType(ReverseIAT(DynamicArrayStore.Get(ID, Index, NumValues))) ;
     return reverse(DynamicArrayStore.Get(ID, Index, NumValues)) ;
   end function Get ;
@@ -979,6 +977,9 @@ package body DynamicArrayGenericPkg is
     iValue   : ElementType 
   ) is
   begin
+    if DynamicArrayStore.IdNotInUse(ID, "Set") then
+      return ; 
+    end if ; 
     DynamicArrayStore.Set(ID, Index, iValue) ;
   end procedure Set ;
   
@@ -988,6 +989,9 @@ package body DynamicArrayGenericPkg is
     iValue   : ArrayType 
   ) is
   begin
+    if DynamicArrayStore.IdNotInUse(ID, "Set") then
+      return ; 
+    end if ; 
 --    DynamicArrayStore.Set(ID, Index, ReverseIAT(InternalArrayType(iValue))) ;
     DynamicArrayStore.Set(ID, Index, reverse(iValue)) ;
   end procedure Set ;
@@ -998,7 +1002,11 @@ package body DynamicArrayGenericPkg is
   impure function GetNext (
     ID        : DynamicArrayIDType 
   ) return ElementType is
+    variable Result : ElementType ;
   begin
+    if DynamicArrayStore.IdNotInUse(ID, "GetNext") then
+      return Result ;  -- returning default value for type
+    end if ; 
     return DynamicArrayStore.GetNext(ID) ;
   end function GetNext ; 
 
@@ -1006,7 +1014,11 @@ package body DynamicArrayGenericPkg is
     ID        : DynamicArrayIDType ;
     NumValues : natural 
   ) return ArrayType is
+    variable Result : InternalArrayType(1 to NumValues) ;
   begin
+    if DynamicArrayStore.IdNotInUse(ID, "GetNext") then
+      return ArrayType(Result) ; 
+    end if ; 
 --    return ArrayType(ReverseIAT(DynamicArrayStore.GetNext(ID, NumValues))) ;
     return reverse(DynamicArrayStore.GetNext(ID, NumValues)) ;
   end function GetNext ; 
