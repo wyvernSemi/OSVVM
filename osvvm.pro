@@ -98,6 +98,8 @@ if {$::osvvm::Supports2019AssertApi  && $::osvvm::VhdlVersion >= 2019} {
 
 analyze AlertLogPkg.vhd
 
+analyze IdFifoPtypePkg.vhd 
+
 if {$::osvvm::ToolName ne "XSIM"}  {
   analyze TbUtilPkg.vhd
 } else {
@@ -116,6 +118,7 @@ analyze RandomPkg.vhd [NoNullRangeWarning]
 # Likely will be replaced when VHDL-2019 support is good.
 analyze RandomProcedurePkg.vhd
 analyze CoveragePkg.vhd [NoNullRangeWarning]
+analyze CoveragePtPkg.vhd 
 analyze DelayCoveragePkg.vhd
 
 if {[string compare $::osvvm::ClockResetVersion "2024.05"] == 1}  {
