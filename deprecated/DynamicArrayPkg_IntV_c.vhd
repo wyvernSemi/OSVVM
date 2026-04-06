@@ -1,6 +1,6 @@
 --
---  File Name:         DynamicArrayPkg_IntV_c.vhd
---  Design Unit Name:  DynamicArrayPkg_IntV_c
+--  File Name:         DynamicArrayPkg_IntV.vhd
+--  Design Unit Name:  DynamicArrayPkg_IntV
 --  Revision:          STANDARD VERSION
 --
 --  Maintainer:        Jim Lewis      email:  jim@synthworks.com
@@ -56,7 +56,7 @@ use work.NameStorePkg.all ;
 use work.LanguageSupport2019Pkg.all ;
 use work.IdFifoPTypePkg.all ; 
 
-package DynamicArrayPkg_IntV_c is 
+package DynamicArrayPkg_IntV is 
   -- generic (type ArrayType is array (type is range <>) of type is private ) ;
   -- 
   -- -- Package local definitions
@@ -324,13 +324,13 @@ package DynamicArrayPkg_IntV_c is
   -- Set the size of the list to 0 for all copies of the list
   procedure       MakeEmpty    (ID : DynamicArrayIDType) ;
 
-end package DynamicArrayPkg_IntV_c ;
+end package DynamicArrayPkg_IntV ;
 
 --- ///////////////////////////////////////////////////////////////////////////
 --- ///////////////////////////////////////////////////////////////////////////
 --- ///////////////////////////////////////////////////////////////////////////
 
-package body DynamicArrayPkg_IntV_c is
+package body DynamicArrayPkg_IntV is
   constant ITERATOR_LENGTH_INIT : integer := 3 ; 
   constant ITERATOR_LENGTH_GROW : integer := 3 ;
   constant INITIAL_ARRAY_SIZE   : integer := 16 ;
@@ -1235,7 +1235,6 @@ package body DynamicArrayPkg_IntV_c is
 
   ------------------------------------------------------------
   impure function IndexNext (ID : DynamicArrayIDType; NumValues : integer := 1) return integer is
-    variable CurIndex : integer ; 
   begin
     if DynamicArrayStore.IdNotInUse(ID, "IndexNext") then
       return -1 ; 
@@ -1254,7 +1253,6 @@ package body DynamicArrayPkg_IntV_c is
 
   ------------------------------------------------------------
   impure function IndexPrevious (ID : DynamicArrayIDType; NumValues : integer := 1) return integer is
-    variable CurIndex : integer ; 
   begin
     if DynamicArrayStore.IdNotInUse(ID, "IndexPrevious") then
       return -1 ; 
@@ -1275,7 +1273,6 @@ package body DynamicArrayPkg_IntV_c is
   impure function GetNext (
     ID        : DynamicArrayIDType 
   ) return ElementType is
-    variable StartingIndex : natural ;
     variable Result : ElementType ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "GetNext") then
@@ -1289,7 +1286,6 @@ package body DynamicArrayPkg_IntV_c is
     ID        : DynamicArrayIDType ;
     NumValues : natural 
   ) return ArrayType is
-    variable StartingIndex : natural ;
     variable Result : InternalArrayType(1 to NumValues) ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "GetNext") then
@@ -1303,7 +1299,6 @@ package body DynamicArrayPkg_IntV_c is
     ID        : DynamicArrayIDType ;
     iValue    : ElementType 
   ) is
-    variable StartingIndex : natural ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "SetNext") then
       return ; 
@@ -1316,7 +1311,6 @@ package body DynamicArrayPkg_IntV_c is
     ID        : DynamicArrayIDType ;
     iValue    : ArrayType 
   ) is
-    variable StartingIndex : natural ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "SetNext") then
       return ; 
@@ -1328,7 +1322,6 @@ package body DynamicArrayPkg_IntV_c is
   impure function GetPrevious (
     ID        : DynamicArrayIDType 
   ) return ElementType is
-    variable StartingIndex : natural ;
     variable Result : ElementType ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "GetPrevious") then
@@ -1342,7 +1335,6 @@ package body DynamicArrayPkg_IntV_c is
     ID        : DynamicArrayIDType ;
     NumValues : natural 
   ) return ArrayType is
-    variable StartingIndex : natural ;
     variable Result : InternalArrayType(1 to NumValues) ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "GetPrevious") then
@@ -1356,7 +1348,6 @@ package body DynamicArrayPkg_IntV_c is
     ID        : DynamicArrayIDType ;
     iValue    : ElementType 
   ) is
-    variable StartingIndex : natural ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "SetPrevious") then
       return ; 
@@ -1369,7 +1360,6 @@ package body DynamicArrayPkg_IntV_c is
     ID        : DynamicArrayIDType ;
     iValue    : ArrayType 
   ) is
-    variable StartingIndex : natural ;
   begin
     if DynamicArrayStore.IdNotInUse(ID, "SetPrevious") then
       return ; 
@@ -1407,4 +1397,4 @@ package body DynamicArrayPkg_IntV_c is
     DynamicArrayStore.MakeEmpty(ID) ;
   end procedure MakeEmpty ;
 
-end package body DynamicArrayPkg_IntV_c ;
+end package body DynamicArrayPkg_IntV ;
