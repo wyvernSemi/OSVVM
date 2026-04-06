@@ -1,6 +1,6 @@
 --
---  File Name:         DynamicArrayPkg_slv.vhd
---  Design Unit Name:  DynamicArrayPkg_slv
+--  File Name:         DynamicArrayPkg_IntV_c.vhd
+--  Design Unit Name:  DynamicArrayPkg_IntV_c
 --  Revision:          STANDARD VERSION
 --
 --  Maintainer:        Jim Lewis      email:  jim@synthworks.com
@@ -56,24 +56,27 @@ use work.NameStorePkg.all ;
 use work.LanguageSupport2019Pkg.all ;
 use work.IdFifoPTypePkg.all ; 
 
-package DynamicArrayPkg_slv is 
---  generic (type ArrayType is array (type is range <>) of type is private ) ;
---
---  subtype ElementType is ArrayType'element ; 
---  subtype IndexType   is ArrayType'index ; 
---
---  type InternalArrayType is array (integer range <>) of ElementType ; 
-
-  subtype ArrayType is std_logic_vector ; 
-  subtype ElementType is std_logic ; 
+package DynamicArrayPkg_IntV_c is 
+  -- generic (type ArrayType is array (type is range <>) of type is private ) ;
+  -- 
+  -- -- Package local definitions
+  -- subtype ElementType is ArrayType'element ; 
+  -- subtype IndexType   is ArrayType'index ; 
+  -- type InternalArrayType is array (integer range <>) of ElementType ;
+  
+  subtype ArrayType is integer_vector ; 
+  subtype ElementType is integer ; 
   subtype IndexType   is natural ; 
-  subtype InternalArrayType is std_logic_vector ; 
+  subtype InternalArrayType is integer_vector ; 
 
   constant FIRST_INDEX   : integer := 0 ; 
 
+  ------------------------------------------------------------
+  -- DynamicArrayIDType
+  -- ID Type for Dynamic Arrays
   type DynamicArrayIDType is record
-    IdNum     : integer_max ;
-    CopyNum   : integer_max ; 
+    IdNum     : integer_max ;  -- A unique list
+    CopyNum   : integer_max ;  -- A unique iterator
   end record DynamicArrayIDType ; 
 
   constant EMPTY_DYNAMIC_ARRAY_ID : DynamicArrayIDType := (IdNum => 0, CopyNum => 0) ;
@@ -81,9 +84,13 @@ package DynamicArrayPkg_slv is
   type DynamicArrayIDArrayType is array (integer range <>) of DynamicArrayIDType ;  
   
   ------------------------------------------------------------
+  -- IsInitialized
+  -- True if singleton has been constructed
   impure function IsInitialized (ID : DynamicArrayIDType) return boolean ; -- ID Valid
 
   ------------------------------------------------------------
+  -- NewID
+  -- Construct a new dynamic array
   impure function NewID (
     Name                : String ;
     Size                : natural ; 
@@ -102,12 +109,15 @@ package DynamicArrayPkg_slv is
 --    PrintParent         : AlertLogPrintParentType := PRINT_NAME_AND_PARENT
 --  ) return DynamicArrayIDType ;
   
+  ------------------------------------------------------------
+  -- CopyID
+  -- Create a shallow copy of the data structure
+  --
   impure function CopyID ( SiblingID : DynamicArrayIDType ) return DynamicArrayIDType ;
 
   ------------------------------------------------------------
   -- Append
-  --   Add element(s) to the end of the list
-  --   Same as Push / Push Back
+  -- Add element(s) to the end of the list
   procedure Append (
     ID        : DynamicArrayIDType ; 
     iValue    : ElementType
@@ -119,6 +129,8 @@ package DynamicArrayPkg_slv is
   ) ;
 
   ------------------------------------------------------------
+  -- Get
+  -- Return the element(s) at the index
   impure function Get  (
     ID        : DynamicArrayIDType ; 
     Index     : integer 
@@ -131,6 +143,8 @@ package DynamicArrayPkg_slv is
   ) return ArrayType ;
 
   ------------------------------------------------------------
+  -- Set
+  -- Set the element(s) at the index
   procedure Set (
     ID       : DynamicArrayIDType ; 
     Index    : integer ;
@@ -145,8 +159,8 @@ package DynamicArrayPkg_slv is
   
   ------------------------------------------------------------
   -- Insert
-  --   Insert element(s) to the list at Index
-  --   O(n) operation since array is shifted
+  -- Insert element(s) to the list at Index
+  -- O(n) operation since array is shifted
   procedure Insert (
     ID       : DynamicArrayIDType ; 
     Index    : integer ;
@@ -161,8 +175,8 @@ package DynamicArrayPkg_slv is
 
   ------------------------------------------------------------
   -- Prepend
-  --   Prepend element(s) to the list at start of list
-  --   O(n) operation since array is shifted
+  -- Prepend element(s) to the list at start of list
+  -- O(n) operation since array is shifted
   procedure Prepend (
     ID       : DynamicArrayIDType ; 
     iValue   : ElementType 
@@ -189,19 +203,54 @@ package DynamicArrayPkg_slv is
   ) ;
 
   ------------------------------------------------------------
+  -- Each Iterator / Copy maintains an internal index to the list
+  -- The following provide means to manipulate that index
+
+  
+  ------------------------------------------------------------
+  -- GetIndex
+  -- Return the current value of the internal index
   impure function GetIndex      (ID : DynamicArrayIDType) return integer ;
+
+  ------------------------------------------------------------
+  -- SetIndex
+  -- Set the current value of the internal index
   procedure       SetIndex      (ID : DynamicArrayIDType ; Index : integer := FIRST_INDEX) ;
+
+  ------------------------------------------------------------
+  -- GetFirstIndex
+  -- Return the first index in the list
   impure function GetFirstIndex (ID : DynamicArrayIDType) return integer ;
+
+  ------------------------------------------------------------
+  -- GetLastIndex
+  -- Return the last index in the list
+  -- With NumValues = 0, LastIndex is a reference to the next empty index
   impure function GetLastIndex  (ID : DynamicArrayIDType; NumValues : natural := 0) return integer ;
+
+  ------------------------------------------------------------
+  -- IndexNext
+  -- Return the current index and then increment index by NumValues
   impure function IndexNext     (ID : DynamicArrayIDType; NumValues : integer := 1) return integer ;
+
+  ------------------------------------------------------------
+  -- HasNext
+  -- If the index is incremented by NumValues, will the index be within the list
   impure function HasNext       (ID : DynamicArrayIDType; NumValues : integer := 1) return boolean ;
+
+  ------------------------------------------------------------
+  -- IndexPrevious
+  -- Decrement index by NumValues and return the index value
   impure function IndexPrevious (ID : DynamicArrayIDType; NumValues : integer := 1) return integer ;
+
+  ------------------------------------------------------------
+  -- HasPrevious
+  -- If the index is decremented by NumValues, will the index be within the list
   impure function HasPrevious   (ID : DynamicArrayIDType; NumValues : integer := 1) return boolean ;
 
   ------------------------------------------------------------
   -- GetNext
-  --   Get value at index and then increment index (index++)
-  ------------------------------------------------------------
+  -- Get value at index and then increment index (index++)
   impure function GetNext (
     ID        : DynamicArrayIDType 
   ) return ElementType ; 
@@ -213,8 +262,7 @@ package DynamicArrayPkg_slv is
 
   ------------------------------------------------------------
   -- SetNext
-  --   Set value at index and then increment index (index++)
-  ------------------------------------------------------------
+  -- Set value at index and then increment index (index++)
   procedure SetNext (
     ID        : DynamicArrayIDType ;
     iValue    : ElementType 
@@ -227,13 +275,11 @@ package DynamicArrayPkg_slv is
 
   ------------------------------------------------------------
   -- GetPrevious
-  --   Decrement index and then get value at index  (--index)
-  ------------------------------------------------------------
+  -- Decrement index by NumValues and then get value at index  (--index)
   impure function GetPrevious (
     ID        : DynamicArrayIDType 
   ) return ElementType ;
 
-  ------------------------------------------------------------
   impure function GetPrevious (
     ID        : DynamicArrayIDType ;
     NumValues : natural 
@@ -241,37 +287,50 @@ package DynamicArrayPkg_slv is
 
   ------------------------------------------------------------
   -- SetPrevious
-  --   Decrement index and then set value at index  (--index)
-  ------------------------------------------------------------
+  -- Decrement index and then set value at index  (--index)
   procedure SetPrevious (
     ID        : DynamicArrayIDType ;
     iValue    : ElementType 
   ) ;
 
-  ------------------------------------------------------------
   procedure SetPrevious (
     ID        : DynamicArrayIDType ;
     iValue    : ArrayType 
   ) ;
 
   ------------------------------------------------------------
+  -- IsEmpty
+  -- Does the list have any elements in it
   impure function IsEmpty       (ID : DynamicArrayIDType) return boolean ;  -- Does ID have storage
+
+  ------------------------------------------------------------
+  -- Deallocate
+  -- Deallocate the current copy.  
+  -- If no copies remain free up the list.
   impure function Deallocate    (ID : DynamicArrayIDType) return DynamicArrayIDType; 
 
   ------------------------------------------------------------
+  -- GetSize
+  -- Return the number of elements in the list.  
   impure function GetSize      (ID : DynamicArrayIDType) return integer ;
+
+  ------------------------------------------------------------
+  -- GetCapacity
+  -- Return the maximum number of elements the list can hold.  
   impure function GetCapacity  (ID : DynamicArrayIDType) return integer ;
 
   ------------------------------------------------------------
+  -- MakeEmpty
+  -- Set the size of the list to 0 for all copies of the list
   procedure       MakeEmpty    (ID : DynamicArrayIDType) ;
 
-end package DynamicArrayPkg_slv ;
+end package DynamicArrayPkg_IntV_c ;
 
 --- ///////////////////////////////////////////////////////////////////////////
 --- ///////////////////////////////////////////////////////////////////////////
 --- ///////////////////////////////////////////////////////////////////////////
 
-package body DynamicArrayPkg_slv is
+package body DynamicArrayPkg_IntV_c is
   constant ITERATOR_LENGTH_INIT : integer := 3 ; 
   constant ITERATOR_LENGTH_GROW : integer := 3 ;
   constant INITIAL_ARRAY_SIZE   : integer := 16 ;
@@ -295,9 +354,6 @@ package body DynamicArrayPkg_slv is
     impure function CopyID ( SiblingID : DynamicArrayIDType ) return DynamicArrayIDType ;
 
     ------------------------------------------------------------
-    -- Append
-    --   Add element(s) to the end of the list
-    --   Expand size and capacity of list as necessary
     procedure Append (
       ID        : DynamicArrayIDType ; 
       iValue    : ElementType
@@ -584,8 +640,6 @@ package body DynamicArrayPkg_slv is
     end function GetArrayValue ; 
 
     ------------------------------------------------------------
-    -- Append
-    --   Add element(s) to the end of the list
     procedure Append (
       ID        : DynamicArrayIDType ; 
       iValue    : ElementType
@@ -718,9 +772,6 @@ package body DynamicArrayPkg_slv is
     end procedure Set ;
 
     ------------------------------------------------------------
-    -- Insert
-    --   Add element(s) to the list at Index
-    --   O(n) operation
     procedure Insert (
       ID        : DynamicArrayIDType ; 
       Index     : integer ;
@@ -754,9 +805,6 @@ package body DynamicArrayPkg_slv is
     end procedure Insert ;
 
     ------------------------------------------------------------
-    -- Insert
-    --   Add element(s) to the list at Index
-    --   O(n) operation
     procedure Insert (
       ID        : DynamicArrayIDType ; 
       Index     : integer ;
@@ -792,9 +840,6 @@ package body DynamicArrayPkg_slv is
     end procedure Insert ;
 
     ------------------------------------------------------------
-    -- Delete
-    --   Remove element(s) from the list at Index
-    --   O(n) operation since array is shifted
     procedure Delete (
       ID        : DynamicArrayIDType ; 
       Index     : integer 
@@ -817,9 +862,6 @@ package body DynamicArrayPkg_slv is
     end procedure Delete ;
 
     ------------------------------------------------------------
-    -- Delete
-    --   Remove element(s) from the list at Index
-    --   O(n) operation since array is shifted
     procedure Delete (
       ID        : DynamicArrayIDType ; 
       Index     : integer ;
@@ -950,8 +992,10 @@ package body DynamicArrayPkg_slv is
       if IdNotInUse(ID, "MakeEmpty") then
         return ; 
       end if ; 
-      SingletonArrayPtr(ID.IdNum).IteratorPtr(ID.CopyNum).HeadIndex := FIRST_INDEX ;
       SingletonArrayPtr(ID.IdNum).TailIndex := FIRST_INDEX ;
+      for i in 1 to SingletonArrayPtr(ID.IdNum).IteratorPtr'length loop 
+        SingletonArrayPtr(ID.IdNum).IteratorPtr(i).HeadIndex := FIRST_INDEX ;
+      end loop ; 
     end procedure MakeEmpty ;
 
   end protected body DynamicArrayPType ;
@@ -1001,9 +1045,6 @@ package body DynamicArrayPkg_slv is
     return DynamicArrayStore.CopyID(SiblingID) ;
   end function CopyID ;
 
-  ------------------------------------------------------------
-  -- Append
-  --   Add element(s) to the end of the list
   ------------------------------------------------------------
   procedure Append (
     ID        : DynamicArrayIDType ; 
@@ -1185,8 +1226,6 @@ package body DynamicArrayPkg_slv is
 
   ------------------------------------------------------------
   impure function GetLastIndex (ID : DynamicArrayIDType; NumValues : natural := 0) return integer is
-  -- With NumValues = 0, LastIndex is a reference to the next empty index
-  ------------------------------------------------------------
   begin
     if DynamicArrayStore.IdNotInUse(ID, "GetLastIndex") then
       return -1 ; 
@@ -1233,9 +1272,6 @@ package body DynamicArrayPkg_slv is
   end function HasPrevious ; 
 
   ------------------------------------------------------------
-  -- GetNext
-  --   Get value at index and then increment index (index++)
-  ------------------------------------------------------------
   impure function GetNext (
     ID        : DynamicArrayIDType 
   ) return ElementType is
@@ -1263,9 +1299,6 @@ package body DynamicArrayPkg_slv is
   end function GetNext ;
 
   ------------------------------------------------------------
-  -- SetNext
-  --   Set value at index and then increment index (index++)
-  ------------------------------------------------------------
   procedure SetNext (
     ID        : DynamicArrayIDType ;
     iValue    : ElementType 
@@ -1291,9 +1324,6 @@ package body DynamicArrayPkg_slv is
     DynamicArrayStore.Set(ID, DynamicArrayStore.IndexNext(ID, iValue'length), InternalArrayType(iValue)) ; 
   end procedure SetNext ;
 
-  ------------------------------------------------------------
-  -- GetPrevious
-  --   Decrement index and then get value at index  (--index)
   ------------------------------------------------------------
   impure function GetPrevious (
     ID        : DynamicArrayIDType 
@@ -1321,9 +1351,6 @@ package body DynamicArrayPkg_slv is
     return ArrayType(DynamicArrayStore.Get(ID => ID, Index => DynamicArrayStore.IndexPrevious(ID, NumValues), NumValues => NumValues)) ; 
   end function GetPrevious ;
 
-  ------------------------------------------------------------
-  -- SetPrevious
-  --   Decrement index and then set value at index  (--index)
   ------------------------------------------------------------
   procedure SetPrevious (
     ID        : DynamicArrayIDType ;
@@ -1380,4 +1407,4 @@ package body DynamicArrayPkg_slv is
     DynamicArrayStore.MakeEmpty(ID) ;
   end procedure MakeEmpty ;
 
-end package body DynamicArrayPkg_slv ;
+end package body DynamicArrayPkg_IntV_c ;
