@@ -1,6 +1,6 @@
 --
 --  File Name:         DynamicArrayPkg_instances.vhd
---  Design Unit Name:  Numerous instances of DynamicArrayGenericPkg
+--  Design Unit Name:  Numerous instances of DynamicVectorGenericPkg
 --  Revision:          STANDARD VERSION
 --
 --  Maintainer:        Jim Lewis      email:  jim@synthworks.com
@@ -9,7 +9,7 @@
 --
 --
 --  Description:
---    Instances of DynamicArrayGenericPkg 
+--    Instances of DynamicVectorGenericPkg 
 --
 --  Developed for:
 --        SynthWorks Design Inc.
@@ -42,14 +42,14 @@
 -- -----------------------------------------------
 -- DynamicArrayPkg_IntV  - dynamic arrays of integer_vector 
 --
-package DynamicArrayPkg_IntV is new work.DynamicArrayGenericPkg 
-  generic map (ArrayType => integer_vector ) ;
+package DynamicVectorPkg_IntV is new work.DynamicVectorGenericPkg 
+  generic map (VectorType => integer_vector ) ;
 
 -- -----------------------------------------------
 -- DynamicArrayPkg_slv  - dynamic arrays of std_logic_vector 
 --
 library ieee ; 
 use ieee.std_logic_1164.all ;
-package DynamicArrayPkg_slv is new work.DynamicArrayGenericPkg 
-  generic map (ArrayType => std_logic_vector ) ;
+package DynamicVectorPkg_slv is new work.DynamicVectorGenericPkg 
+  generic map (VectorType => std_logic_vector ) ;
 

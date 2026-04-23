@@ -129,12 +129,12 @@ if {[string compare $::osvvm::ClockResetVersion "2024.05"] == 1}  {
 
 analyze ResizePkg.vhd
 
-if {$::osvvm::ToolName eq "NVC"}  { 
-  analyze DynamicArrayGenericPkg.vhd 
-  analyze DynamicArrayPkg_instances.vhd
+if {$::osvvm::VhdlVersion >= 2019 && $::osvvm::Supports2019Generics}  { 
+  analyze DynamicVectorGenericPkg.vhd 
+  analyze DynamicVectorPkg_instances.vhd
 } else {
-  analyze deprecated/DynamicArrayPkg_IntV_c.vhd 
-  analyze deprecated/DynamicArrayPkg_slv_c.vhd 
+  analyze deprecated/DynamicVectorPkg_IntV_c.vhd 
+  analyze deprecated/DynamicVectorPkg_slv_c.vhd 
 }
 
 if {$::osvvm::ToolSupportsGenericPackages}  {
