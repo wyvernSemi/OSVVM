@@ -160,7 +160,7 @@ package AlertLogPkg is
   -- May have its own ID or OSVVM_ALERTLOG_ID as default - most scoreboards allocate their own ID
   constant  OSVVM_SCOREBOARD_ALERTLOG_ID   : AlertLogIDType := OSVVM_ALERTLOG_ID ;
   constant  OSVVM_COVERAGE_ALERTLOG_ID     : AlertLogIDType := OSVVM_ALERTLOG_ID ;
-  constant  OSVVM_DYNAMICARRAY_ALERTLOG_ID : AlertLogIDType := OSVVM_ALERTLOG_ID ;
+  constant  OSVVM_DYNAMICVECTOR_ALERTLOG_ID : AlertLogIDType := OSVVM_ALERTLOG_ID ;
 
   -- Same as ALERTLOG_DEFAULT_ID
   constant  ALERT_DEFAULT_ID               : AlertLogIDType := ALERTLOG_DEFAULT_ID ;
