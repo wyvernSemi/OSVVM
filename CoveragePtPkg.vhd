@@ -493,9 +493,10 @@ package body CoveragePtPkg is
   --  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  CovPType  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   ------------------------------------------------------------------------------------------
   type CovPType is protected body
-    file OsvvmCoverageWriteBinFile : text ;
+    variable WriteBinFileName : NamePType ;
+    variable WriteBinOpenKind : File_Open_Kind := WRITE_MODE ;
     variable WriteBinFileOpen : boolean := FALSE ;
-    variable RvSeedInit : boolean := FALSE ;
+    variable RvSeedInit       : boolean := FALSE ;
 
     constant INIT_COVERAGE_ID : CoverageIDType := (ID => integer'right) ; 
     variable CoverageID       : CoverageIDType := INIT_COVERAGE_ID ; 
@@ -540,14 +541,13 @@ package body CoveragePtPkg is
     procedure FileOpenWriteBin (FileName : string; OpenKind : File_Open_Kind ) is
     ------------------------------------------------------------
     begin
-      CheckCoverageID ;
       if not WriteBinFileOpen then
-        work.CoveragePkg.FileOpenWriteBin(FileName, OpenKind) ;
+        WriteBinFileName.Set(FileName) ;
+        WriteBinOpenKind := OpenKind ;
       else
+        -- FileCloseWriteBin ;
         Alert(OSVVM_COVERAGE_PT_ALERTLOG_ID, "CoveragePtPkg.FileOpenWriteBin:" & 
-            "  With 2026.05, there is only one file for FileOpenWriteBin." & 
-            "  Use an older release or only open one at a time." &
-            "  2026.05 adds automatic html functional coverage reports for Shared Variables.", Error) ;
+            "  File Open Already.  Open Ignored.", Warning) ;
       end if ;
       WriteBinFileOpen := TRUE ;
     end procedure FileOpenWriteBin ;
@@ -556,17 +556,24 @@ package body CoveragePtPkg is
     procedure FileCloseWriteBin is
     ------------------------------------------------------------
     begin
-      CheckAndErrorCoverageID ;
       WriteBinFileOpen := FALSE ;
-      work.CoveragePkg.FileCloseWriteBin ;
     end procedure FileCloseWriteBin ;
 
     ------------------------------------------------------------
     procedure PrintToCovFile(S : string) is
     ------------------------------------------------------------
+      file wFile : text ; 
+      variable buf : line ;
     begin
-      CheckAndErrorCoverageID ;
-      work.CoveragePkg.PrintToCovFile(S) ; 
+      if WriteBinFileOpen then
+        file_open(wFile, WriteBinFileName.Get, WriteBinOpenKind) ;
+        write(buf, S) ;
+        writeline(wFile, buf) ;
+        file_close(wFile) ; 
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        work.CoveragePkg.PrintToCovFile(S) ; 
+      end if ;
     end procedure PrintToCovFile ;
 
     ------------------------------------------------------------
@@ -767,11 +774,6 @@ package body CoveragePtPkg is
         InitSeed(CoverageID, Name) ; 
         RvSeedInit := TRUE ;
       end if ;
---      if CoverageID = INIT_COVERAGE_ID then
---        CoverageID := NewID(Name, ParentID => ParentID, ReportMode => USE_PARENT_ID) ; 
---      else 
---        SetAlertLogID(CoverageID, A) ;
---      end if ; 
     end procedure SetAlertLogID ;
 
     ------------------------------------------------------------
@@ -1728,7 +1730,7 @@ package body CoveragePtPkg is
     impure function GetErrorCount return integer is
     ------------------------------------------------------------
     begin
-      CheckAndErrorCoverageID ;
+      CheckCoverageID ;
       return GetErrorCount(CoverageID) ;
     end function GetErrorCount ;
 
@@ -1755,7 +1757,16 @@ package body CoveragePtPkg is
         FailName        => FailName
       ) ;
       CheckAndErrorCoverageID ;
-      WriteBin (ID => CoverageID) ;
+      if WriteBinFileOpen then
+        WriteBin (
+          ID        => CoverageID, 
+          FileName  => WriteBinFileName.Get, 
+          OpenKind  => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        WriteBin (ID => CoverageID) ;
+      end if ;
     end procedure WriteBin ;
 
     ------------------------------------------------------------
@@ -1782,7 +1793,17 @@ package body CoveragePtPkg is
         FailName        => FailName
       ) ;
       CheckAndErrorCoverageID ;
-      WriteBin (ID => CoverageID, LogLevel => LogLevel) ;
+      if WriteBinFileOpen then
+        WriteBin (
+          ID        => CoverageID, 
+          LogLevel  => LogLevel, 
+          FileName  => WriteBinFileName.Get, 
+          OpenKind  => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        WriteBin (ID => CoverageID, LogLevel => LogLevel) ;
+      end if ;
     end procedure WriteBin ;  -- With LogLevel
 
     ------------------------------------------------------------
@@ -1854,7 +1875,17 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       CheckAndErrorCoverageID ;
+      if WriteBinFileOpen then
+        DumpBin (
+          ID          => CoverageID, 
+          LogLevel    => LogLevel,
+          FileName    => WriteBinFileName.Get, 
+          OpenKind    => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
       DumpBin (CoverageID, LogLevel) ;
+      end if ;
     end procedure DumpBin ;
 
     ------------------------------------------------------------
@@ -1863,7 +1894,17 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       CheckAndErrorCoverageID ;
-      WriteCovHoles(CoverageID, LogLevel) ;
+      if WriteBinFileOpen then
+        WriteCovHoles (
+          ID          => CoverageID, 
+          LogLevel    => LogLevel,
+          FileName    => WriteBinFileName.Get, 
+          OpenKind    => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        WriteCovHoles(CoverageID, LogLevel) ;
+      end if ;
     end procedure WriteCovHoles ;
 
     ------------------------------------------------------------
@@ -1871,7 +1912,17 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       CheckAndErrorCoverageID ;
-      WriteCovHoles(CoverageID, PercentCov) ;
+      if WriteBinFileOpen then
+        WriteCovHoles (
+          ID          => CoverageID, 
+          FileName    => WriteBinFileName.Get, 
+          PercentCov  => PercentCov,
+          OpenKind    => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        WriteCovHoles(CoverageID, PercentCov) ;
+      end if ;
     end procedure WriteCovHoles ;
 
     ------------------------------------------------------------
@@ -1879,7 +1930,18 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       CheckAndErrorCoverageID ;
-      WriteCovHoles(CoverageID, LogLevel, PercentCov) ;
+      if WriteBinFileOpen then
+        WriteCovHoles (
+          ID          => CoverageID, 
+          LogLevel    => LogLevel,
+          FileName    => WriteBinFileName.Get, 
+          PercentCov  => PercentCov,
+          OpenKind    => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        WriteCovHoles(CoverageID, LogLevel, PercentCov) ;
+      end if ;
     end procedure WriteCovHoles ;
 
     ------------------------------------------------------------
@@ -1953,22 +2015,6 @@ package body CoveragePtPkg is
 -- Maintained for backward compatibility only and
 -- may be removed in the future.
 -- ------------------------------------------------------------
---    -----------------------------------------------------------
---    procedure DeprecatedAtLeast  is
---    ------------------------------------------------------------
---    begin
---      Alert(OSVVM_COVERAGE_PT_ALERTLOG_ID, "CoveragePtPkg: Usage of AtLeast parameter is deprecated and removed. " & 
---        "Parameter Ignored.  Functionality not backward compatible.", WARNING) ;
---    end procedure DeprecatedAtLeast ;
---
---    -----------------------------------------------------------
---    impure function AtLeastToPercentCov(AtLeast : integer) return real is
---    ------------------------------------------------------------
---    begin
---      CheckAndErrorCoverageID ;
---      return 100.0 * real(AtLeast) / real( GetMaxAtLeast(CoverageID)) ;
---    end function AtLeastToPercentCov ;
-
     ------------------------------------------------------------
     -- Deprecated/Subsumed by versions with PercentCov Parameter (rather than AtLeast value)
     impure function RandCovPoint (AtLeast : integer ) return integer is
@@ -1976,8 +2022,6 @@ package body CoveragePtPkg is
     begin
       CheckAndErrorCoverageID ;
       return GetRandPoint(CoverageID, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return GetRandPoint(AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function RandCovPoint ;
 
     ------------------------------------------------------------
@@ -1986,8 +2030,6 @@ package body CoveragePtPkg is
     begin
       CheckAndErrorCoverageID ;
       return GetRandPoint(CoverageID, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return GetRandPoint(AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function RandCovPoint ;
 
     ------------------------------------------------------------
@@ -1997,8 +2039,6 @@ package body CoveragePtPkg is
     begin
       CheckAndErrorCoverageID ;
       return GetRandBinVal(CoverageID, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return GetRandBinVal(AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function RandCovBinVal ;
 
     ------------------------------------------------------------
@@ -2008,8 +2048,6 @@ package body CoveragePtPkg is
     begin
       CheckAndErrorCoverageID ;
       return GetRandBinVal(CoverageID, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return GetRandBinVal(AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function RandCovHole ;
 
     ------------------------------------------------------------
@@ -2019,8 +2057,6 @@ package body CoveragePtPkg is
     begin
       CheckCoverageID ;
       return CountCovHoles(CoverageID, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return     CountCovHoles(AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function CountCovHoles ;
 
     ------------------------------------------------------------
@@ -2030,8 +2066,6 @@ package body CoveragePtPkg is
     begin
       CheckCoverageID ;
       return IsCovered(CoverageID, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return     IsCovered(AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function IsCovered ;
 
     ------------------------------------------------------------
@@ -2041,8 +2075,6 @@ package body CoveragePtPkg is
     begin
       CheckCoverageID ;
       return GetHoleBinVal(CoverageID, ReqHoleNum, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return     GetHoleBinVal (ReqHoleNum, AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function GetHoleBinVal ;
 
     ------------------------------------------------------------
@@ -2052,8 +2084,6 @@ package body CoveragePtPkg is
     begin
       CheckCoverageID ;
       return GetHoleBinVal(CoverageID, ReqHoleNum, AtLeast) ; 
---      DeprecatedAtLeast ;
---      return     GetHoleBinVal (ReqHoleNum, AtLeastToPercentCov(AtLeast)) ; -- call this package
     end function GetCovHole ;
 
     ------------------------------------------------------------
@@ -2063,9 +2093,17 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       CheckCoverageID ;
-      WriteCovHoles(CoverageID, AtLeast) ; 
---      DeprecatedAtLeast ;
---      WriteCovHoles(AtLeastToPercentCov(AtLeast)) ;  -- call this package
+      if WriteBinFileOpen then
+        WriteCovHoles (
+          ID          => CoverageID, 
+          FileName    => WriteBinFileName.Get, 
+          AtLeast     => AtLeast,
+          OpenKind    => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        WriteCovHoles(CoverageID, AtLeast) ; 
+      end if ;
     end procedure WriteCovHoles ;
 
     ------------------------------------------------------------
@@ -2074,9 +2112,18 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       CheckCoverageID ;
-      WriteCovHoles(CoverageID, LogLevel, AtLeast) ; 
---      DeprecatedAtLeast ;
---      WriteCovHoles(LogLevel, AtLeastToPercentCov(AtLeast)) ; -- call this package
+      if WriteBinFileOpen then
+        WriteCovHoles (
+          ID          => CoverageID, 
+          LogLevel    => LogLevel,
+          FileName    => WriteBinFileName.Get, 
+          AtLeast     => AtLeast,
+          OpenKind    => WriteBinOpenKind
+        ) ;
+        WriteBinOpenKind := APPEND_MODE ; 
+      else 
+        WriteCovHoles(CoverageID, LogLevel, AtLeast) ; 
+      end if ;
     end procedure WriteCovHoles ;
 
     ------------------------------------------------------------
@@ -2086,8 +2133,6 @@ package body CoveragePtPkg is
     begin
       CheckCoverageID ;
       WriteCovHoles(CoverageID, FileName, AtLeast, OpenKind) ; 
---      DeprecatedAtLeast ;
---      WriteCovHoles(FileName, AtLeastToPercentCov(AtLeast), OpenKind) ; -- call this package
     end procedure WriteCovHoles ;
 
     ------------------------------------------------------------
@@ -2097,8 +2142,6 @@ package body CoveragePtPkg is
     begin
       CheckCoverageID ;
       WriteCovHoles(CoverageID, LogLevel, FileName, AtLeast, OpenKind) ; 
---      DeprecatedAtLeast ;
---      WriteCovHoles(LogLevel, FileName, AtLeastToPercentCov(AtLeast), OpenKind) ; -- call this package
     end procedure WriteCovHoles ;
 
 --------------------------------------------------------------
@@ -2265,9 +2308,7 @@ package body CoveragePtPkg is
     variable BinInfo1, BinInfo2 : CovBinBaseType ;
     variable BinVal1, BinVal2 : RangeArrayType(1 to Bin1.GetBinValLength) ;
     variable buf : line ;
---    variable iAlertLogID : AlertLogIDType ;
   begin
---    iAlertLogID := Bin1.GetAlertLogID ;
     
     NumBins1 := Bin1.GetNumBins ;
     NumBins2 := Bin2.GetNumBins ;
@@ -2308,7 +2349,6 @@ package body CoveragePtPkg is
       end if ;
     end loop ;
   end procedure CompareBins ;
-  
   
   ------------------------------------------------------------
   -- Experimental.  Intended primarily for development.
