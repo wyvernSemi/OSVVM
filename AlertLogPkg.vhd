@@ -27,6 +27,10 @@
 --
 --  Revision History:
 --    Date      Version    Description
+--    05/2026   2026.05    Added USE_PARENT_ID to AlertLogReportModeType.  Allows data structures to select to create an ID or use the parent ID.
+--                         Is an alternative to using DISABLED which creates an ID.
+--    01/2026   2026.01    Added reporting for VHDL asserts for tools that support it.
+--                         GetVhdlAlertCount to return AlertCountType with the current VHDL assert count.
 --    10/2025   2025.10    Connected settings from VhdlSettings:  ALERT_LOG_STOP_COUNT_FAILURE, ALERT_LOG_STOP_COUNT_ERROR, ALERT_LOG_STOP_COUNT_WARNING
 --                         Renamed GetAlertLogID (now alias) to GetID.
 --    02/2025   2025.02    Added NewReqID and FindID.  Updated requirement handling s.t. requirements can be anywhere in the hierarchy.
