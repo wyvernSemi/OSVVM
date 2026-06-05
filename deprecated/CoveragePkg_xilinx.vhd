@@ -733,7 +733,16 @@ package CoveragePkg is
   -- End of Deprecated / Subsumed by versions with PercentCov Parameter
   -- ------------------------------------------------------------
 
-------------------------------------------------------------
+  ------------------------------------------------------------
+  -- Experimental.  Intended primarily for development.
+  procedure CompareBins (
+  ------------------------------------------------------------
+    constant Bin1       : in    CoverageIDType ;
+    constant Bin2       : in    CoverageIDType ;
+    variable ErrorCount : out   integer 
+  ) ;
+
+  ------------------------------------------------------------
   -- Experimental.  Intended primarily for development.
   procedure CompareBins (
   ------------------------------------------------------------
@@ -7629,34 +7638,34 @@ package body CoveragePkg is
   -- End of Deprecated / Subsumed by versions with PercentCov Parameter
   -- ------------------------------------------------------------
 
-
   ------------------------------------------------------------
   -- Experimental.  Intended primarily for development.
   procedure CompareBins (
   ------------------------------------------------------------
     constant Bin1       : in    CoverageIDType ;
     constant Bin2       : in    CoverageIDType ;
-    variable Valid      : out   Boolean
+    variable ErrorCount : out   integer 
   ) is
     variable NumBins1, NumBins2 : integer ;
     variable BinInfo1, BinInfo2 : CovBinBaseType ;
     variable BinVal1, BinVal2 : RangeArrayType(1 to GetBinValLength(Bin1)) ;
     variable buf : line ;
   begin
-
+    ErrorCount := 0 ; 
+    
     NumBins1 := GetNumBins(Bin1) ;
     NumBins2 := GetNumBins(Bin2) ;
 
-    Valid := TRUE ;
+--    Valid := TRUE ;
 
     if (NumBins1 /= NumBins2) then
-      Valid := FALSE ;
+      ErrorCount := ErrorCount + 1 ;
       print("CoveragePkg.CompareBins: CoverageModels " & GetCovModelName(Bin1) & " and " & GetCovModelName(Bin2) &
             " have different bin lengths") ;
       return ;
     end if ;
 
-    for i in 1 to NumBins1 loop
+    for i in 1 to minimum(NumBins1, NumBins2) loop
       BinInfo1 := GetBinInfo(Bin1, i) ;
       BinInfo2 := GetBinInfo(Bin2, i) ;
       BinVal1  := GetBinVal (Bin1, i) ;
@@ -7678,7 +7687,7 @@ package body CoveragePkg is
         write(buf, "   AtLeast = " & to_string(BinInfo2.AtLeast)) ;
         write(buf, "   Weight = " &  to_string(BinInfo2.Weight) ) ;  -- & LF
         -- writeline(OUTPUT, buf) ;
-        Valid := FALSE ;
+        ErrorCount := ErrorCount + 1 ;
         writeline(buf) ;
         -- Alert(iAlertLogID, buf.all, ERROR) ;
         -- deallocate(buf) ;
@@ -7686,6 +7695,19 @@ package body CoveragePkg is
     end loop ;
   end procedure CompareBins ;
 
+  ------------------------------------------------------------
+  -- Experimental.  Intended primarily for development.
+  procedure CompareBins (
+  ------------------------------------------------------------
+    constant Bin1       : in    CoverageIDType ;
+    constant Bin2       : in    CoverageIDType ;
+    variable Valid      : out   Boolean
+  ) is
+    variable ErrorCount : integer ; 
+  begin
+    CompareBins(Bin1, Bin2, ErrorCount) ;
+    Valid := ErrorCount = 0 ; 
+  end procedure CompareBins ;
 
   ------------------------------------------------------------
   -- Experimental.  Intended primarily for development.
@@ -7694,12 +7716,12 @@ package body CoveragePkg is
     constant Bin1       : in    CoverageIDType ;
     constant Bin2       : in    CoverageIDType
   ) is
-    variable Valid : boolean ;
+    variable ErrorCount : integer ; 
     variable iAlertLogID : AlertLogIDType ;
   begin
-    CompareBins(Bin1, Bin2, Valid) ;
+    CompareBins(Bin1, Bin2, ErrorCount) ;
     iAlertLogID := GetAlertLogID(Bin1) ;
-    AffirmIf(iAlertLogID, Valid, "CompareBins(Bin1, Bin2) " & GetCovModelName(Bin1) & " and " & GetCovModelName(Bin2)) ;
+    AffirmIf(iAlertLogID, ErrorCount = 0, "CompareBins(Bin1, Bin2) " & GetCovModelName(Bin1) & " and " & GetCovModelName(Bin2)) ;
   end procedure CompareBins ;
 
   ------------------------------------------------------------
