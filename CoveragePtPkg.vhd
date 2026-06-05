@@ -464,6 +464,8 @@ package CoveragePtPkg is
 
   ------------------------------------------------------------
   -- Experimental.  Intended primarily for development.
+  -- This does not work in Xilinx XSIM.  Use the following instead:
+  --    CompareBins(Bin1.GetCoverageID, Bin2.GetCoverageID, ErrorCount) ;
   procedure CompareBins (
   ------------------------------------------------------------
     variable Bin1       : inout CovPType ;
@@ -473,6 +475,8 @@ package CoveragePtPkg is
 
   ------------------------------------------------------------
   -- Experimental.  Intended primarily for development.
+  -- This does not work in Xilinx XSIM.  Use the following instead:
+  --    CompareBins(Bin1.GetCoverageID, Bin2.GetCoverageID) ;
   procedure CompareBins (
   ------------------------------------------------------------
     variable Bin1       : inout CovPType ;
@@ -493,7 +497,7 @@ package body CoveragePtPkg is
   --  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  CovPType  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   ------------------------------------------------------------------------------------------
   type CovPType is protected body
-    variable WriteBinFileName : NamePType ;
+    variable WriteBinFileName : line ;
     variable WriteBinOpenKind : File_Open_Kind := WRITE_MODE ;
     variable WriteBinFileOpen : boolean := FALSE ;
     variable RvSeedInit       : boolean := FALSE ;
@@ -542,7 +546,7 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       if not WriteBinFileOpen then
-        WriteBinFileName.Set(FileName) ;
+        WriteBinFileName := new string'(FileName) ;
         WriteBinOpenKind := OpenKind ;
       else
         -- FileCloseWriteBin ;
@@ -557,6 +561,7 @@ package body CoveragePtPkg is
     ------------------------------------------------------------
     begin
       WriteBinFileOpen := FALSE ;
+      deallocate(WriteBinFileName) ;
     end procedure FileCloseWriteBin ;
 
     ------------------------------------------------------------
@@ -566,7 +571,7 @@ package body CoveragePtPkg is
       variable buf : line ;
     begin
       if WriteBinFileOpen then
-        file_open(wFile, WriteBinFileName.Get, WriteBinOpenKind) ;
+        file_open(wFile, WriteBinFileName.all, WriteBinOpenKind) ;
         write(buf, S) ;
         writeline(wFile, buf) ;
         file_close(wFile) ; 
@@ -1760,7 +1765,7 @@ package body CoveragePtPkg is
       if WriteBinFileOpen then
         WriteBin (
           ID        => CoverageID, 
-          FileName  => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           OpenKind  => WriteBinOpenKind
         ) ;
         WriteBinOpenKind := APPEND_MODE ; 
@@ -1797,7 +1802,7 @@ package body CoveragePtPkg is
         WriteBin (
           ID        => CoverageID, 
           LogLevel  => LogLevel, 
-          FileName  => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           OpenKind  => WriteBinOpenKind
         ) ;
         WriteBinOpenKind := APPEND_MODE ; 
@@ -1879,7 +1884,7 @@ package body CoveragePtPkg is
         DumpBin (
           ID          => CoverageID, 
           LogLevel    => LogLevel,
-          FileName    => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           OpenKind    => WriteBinOpenKind
         ) ;
         WriteBinOpenKind := APPEND_MODE ; 
@@ -1898,7 +1903,7 @@ package body CoveragePtPkg is
         WriteCovHoles (
           ID          => CoverageID, 
           LogLevel    => LogLevel,
-          FileName    => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           OpenKind    => WriteBinOpenKind
         ) ;
         WriteBinOpenKind := APPEND_MODE ; 
@@ -1915,7 +1920,7 @@ package body CoveragePtPkg is
       if WriteBinFileOpen then
         WriteCovHoles (
           ID          => CoverageID, 
-          FileName    => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           PercentCov  => PercentCov,
           OpenKind    => WriteBinOpenKind
         ) ;
@@ -1934,7 +1939,7 @@ package body CoveragePtPkg is
         WriteCovHoles (
           ID          => CoverageID, 
           LogLevel    => LogLevel,
-          FileName    => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           PercentCov  => PercentCov,
           OpenKind    => WriteBinOpenKind
         ) ;
@@ -2096,7 +2101,7 @@ package body CoveragePtPkg is
       if WriteBinFileOpen then
         WriteCovHoles (
           ID          => CoverageID, 
-          FileName    => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           AtLeast     => AtLeast,
           OpenKind    => WriteBinOpenKind
         ) ;
@@ -2116,7 +2121,7 @@ package body CoveragePtPkg is
         WriteCovHoles (
           ID          => CoverageID, 
           LogLevel    => LogLevel,
-          FileName    => WriteBinFileName.Get, 
+          FileName  => WriteBinFileName.all, 
           AtLeast     => AtLeast,
           OpenKind    => WriteBinOpenKind
         ) ;
@@ -2304,51 +2309,14 @@ package body CoveragePtPkg is
     variable Bin2       : inout CovPType ;
     variable ErrorCount : inout integer
   ) is
-    variable NumBins1, NumBins2 : integer ;
-    variable BinInfo1, BinInfo2 : CovBinBaseType ;
-    variable BinVal1, BinVal2 : RangeArrayType(1 to Bin1.GetBinValLength) ;
-    variable buf : line ;
+    variable CoverageID1, CoverageID2 : CoverageIDType ; 
+    variable Valid : boolean ; 
   begin
-    
-    NumBins1 := Bin1.GetNumBins ;
-    NumBins2 := Bin2.GetNumBins ;
+    CoverageID1 := Bin1.GetCoverageID ; 
+    CoverageID2 := Bin2.GetCoverageID ; 
+    CompareBins(CoverageID1, CoverageID2, ErrorCount) ;
+  end procedure CompareBins ; 
 
-    if (NumBins1 /= NumBins2) then
-      ErrorCount := ErrorCount + 1 ;
-      print("CoveragePkg.CompareBins: CoverageModels " & Bin1.GetCovModelName & " and " & Bin2.GetCovModelName & 
-            " have different bin lengths") ; 
-      return ;
-    end if ;
-
-    for i in 1 to NumBins1 loop
-      BinInfo1 := Bin1.GetBinInfo(i) ;
-      BinInfo2 := Bin2.GetBinInfo(i) ;
-      BinVal1  := Bin1.GetBinVal(i) ;
-      BinVal2  := Bin2.GetBinVal(i) ;
-      if BinInfo1 /= BinInfo2 or BinVal1 /= BinVal2 then
-        write(buf, "%% Bin:" & integer'image(i) & " miscompare." & LF) ;
-        -- writeline(OUTPUT, buf) ;
-        swrite(buf, "%% Bin1: ") ;
-        write(buf, BinVal1) ;
-        write(buf, "   Action = " & integer'image(BinInfo1.action)) ;
-        write(buf, "   Count = " & integer'image(BinInfo1.count)) ;
-        write(buf, "   AtLeast = " & integer'image(BinInfo1.AtLeast)) ;
-        write(buf, "   Weight = " & integer'image(BinInfo1.Weight) & LF ) ;
-        -- writeline(OUTPUT, buf) ;
-        swrite(buf, "%% Bin2: ") ;
-        write(buf, BinVal2) ;
-        write(buf, "   Action = " & integer'image(BinInfo2.action)) ;
-        write(buf, "   Count = " & integer'image(BinInfo2.count)) ;
-        write(buf, "   AtLeast = " & integer'image(BinInfo2.AtLeast)) ;
-        write(buf, "   Weight = " & integer'image(BinInfo2.Weight) & LF ) ;
-        -- writeline(OUTPUT, buf) ;
-        ErrorCount := ErrorCount + 1 ;
-        writeline(buf) ; 
-        -- Alert(iAlertLogID, buf.all, ERROR) ; 
-        -- deallocate(buf) ;
-      end if ;
-    end loop ;
-  end procedure CompareBins ;
   
   ------------------------------------------------------------
   -- Experimental.  Intended primarily for development.
@@ -2359,6 +2327,7 @@ package body CoveragePtPkg is
   ) is
     variable ErrorCount : integer ;
     variable iAlertLogID : AlertLogIDType ;
+    variable BinLen : integer ; 
   begin
     CompareBins(Bin1, Bin2, ErrorCount) ; 
     iAlertLogID := Bin1.GetAlertLogID ;
