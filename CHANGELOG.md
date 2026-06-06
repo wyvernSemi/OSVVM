@@ -2,6 +2,7 @@
 
 | Revision  |  Summary |
 ------------|-----------
+| 2026.05   |  Minor feature additions + Further integration of 2019 Features
 | 2026.01   |  Minor feature additions + Further integration of 2019 Features
 | 2025.06   |  Added FileUtilPkg - some refactored from TextUtilPkg.  WaitForClock with ClkActive that supports ?=
 | 2025.04   |  Small refactor of OSVVM.pro
@@ -85,7 +86,7 @@ This file is part of OSVVM.
 Compile order for a given release is in the CHANGELOG that is distributed with that release.
 Hence, this file only has the compile order for the most recent release.
 
-## Revision 2026.01 January/February 2025
+## Revision 2026.05 May 2026
 
 ### Current Revision and Compile Order
 
@@ -97,15 +98,15 @@ how to run it are in the scripts directory as well as Scripts_user_guide.pdf.
   | File Name                                                     | Revision Date  |
   ----------------------------------------------------------------|-----------------
   | IfElsePkg.vhd                                                 | 2024.07  |
-  | OsvvmTypesPkg.vhd                                             | ** 2026.01 ** |
-  | OsvvmScriptSettingsPkg.vhd                                    | ** 2026.01 ** |
-  | OsvvmSettingsPkg.vhd                                          | ** 2026.01 ** |
+  | OsvvmTypesPkg.vhd                                             | 2026.01  |
+  | OsvvmScriptSettingsPkg.vhd                                    | 2026.01  |
+  | OsvvmSettingsPkg.vhd                                          | 2026.01  |
   | If exist OsvvmScriptSettingsPkg_generated.vhd                 |          |
   |   TRUE:   <SettingsDir>/OsvvmScriptSettingsPkg_generated.vhd  | Generated  |
-  |   FALSE:  OsvvmScriptSettingsPkg_default.vhd                  | ** 2026.01 ** |
+  |   FALSE:  OsvvmScriptSettingsPkg_default.vhd                  | 2026.01  |
   | If exist OsvvmSettingsPkg_local.vhd                           |          |
   |   TRUE:   <SettingsDir>/OsvvmSettingsPkg_local.vhd            | User Created |
-  |   FALSE:  OsvvmSettingsPkg_default.vhd                        | ** 2026.01 ** |
+  |   FALSE:  OsvvmSettingsPkg_default.vhd                        | 2026.01  |
   | if not XSIM                                                   |          |
   |   TRUE:   TextUtilPkg.vhd                                     | 2025.06  |
   |   FALSE:  TextUtilPkg_xilinx.vhd                              | 2025.06  |
@@ -121,30 +122,40 @@ how to run it are in the scripts directory as well as Scripts_user_guide.pdf.
   |     CoverageVendorApiPkg.vhd                                  | 2020.01  |
   | TranscriptPkg.vhd                                             | 2023.01  |
   | If version >= 2019                                            |          |
-  |   TRUE    LanguageSupportPkg2019.vhd                          | ** 2026.01 ** |
-  |   FALSE   deprecated/LanguageSupportPkg2019_2.vhd             | ** 2026.01 ** |
+  |   TRUE    LanguageSupportPkg2019.vhd                          | ** 2026.05 **  |
+  |   FALSE   deprecated/LanguageSupportPkg2019_c.vhd             | ** 2026.05 **  |
   | If Supports2019FilePath and version >= 2019                   |          |
-  |   TRUE    FileLinePathPkg.vhd                                 | ** 2026.01 ** |
-  |   FALSE   deprecated/FileLinePathPkg_c.vhd                    | ** 2026.01 ** |
+  |   TRUE    FileLinePathPkg.vhd                                 | 2026.01  |
+  |   FALSE   deprecated/FileLinePathPkg_c.vhd                    | 2026.01  |
   | If Supports2019AssertApi and version >= 2019                  |          |
-  |   TRUE    AssertApiPkg.vhd                                    | ** 2026.01 ** |
-  |   FALSE   deprecated/AssertApiPkg_c.vhd                       | ** 2026.01 ** |
-  | AlertLogPkg.vhd                                               | ** 2026.01 ** |
+  |   TRUE    AssertApiPkg.vhd                                    | 2026.01  |
+  |   FALSE   deprecated/AssertApiPkg_c.vhd                       | 2026.01  |
+  | AlertLogPkg.vhd                                               | ** 2026.05 **   |
+  | IdFifoPtPkg.vhd                                               | ** 2026.05 **   |
   | if not XSIM                                                   |          |
-  |   TRUE    TbUtilPkg.vhd                                       | 2025.06  |
-  |   FALSE   TbUtilPkg_xilinx.vhd                                | 2025.06  |
+  |   TRUE    TbUtilPkg.vhd                                       | ** 2026.05 **   |
+  |   FALSE   TbUtilPkg_xilinx.vhd                                | ** 2026.05 **   |
   | NameStorePkg.vhd                                              | 2024.07  |
   | MessageListPkg.vhd                                            | 2021.07  |
   | SortListPkg_int.vhd                                           | 2020.01  |
   | RandomBasePkg.vhd                                             | 2024.11  |
-  | RandomPkg.vhd                                                 | ** 2026.01 ** |
+  | RandomPkg.vhd                                                 | 2026.01  |
   | RandomProcedurePkg.vhd                                        | 2021.05  |
-  | CoveragePkg.vhd                                               | ** 2026.01 ** |
+  | IF not XSIM
+  |   TRUE:  CoveragePkg.vhd                                      | ** 2026.05 **   |
+  |   FALSE: deprecated/CoveragePkg_xilinx.vhd                    | ** 2026.05 **   |
+  | CoveragePtPkg.vhd                                             | ** 2026.05 **   |
   | DelayCoveragePkg.vhd                                          | 2024.11  |
   | If ClockResetVersion  >= 2024.05                              |          |
   |  TRUE    ClockResetPkg.vhd                                    | 2024.09  |
   |  FALSE   deprecated/ClockResetPkg_2024_05.vhd                 | 2024.07  |
   | ResizePkg.vhd                                                 | 2024.03  |
+  | If 2019 and Supports2019Generics                              |          |
+  |     DynamicVectorGenericPkg.vhd                               | ** 2026.05 **  |
+  |     DynamicVectorPkg_instances.vhd                            | ** 2026.05 **  |
+  | If Not (2019 and Supports2019Generics)                        |          |
+  |     deprecated/DynamicVectorPkg_slv_c.vhd                     | ** 2026.05 **  |
+  |     deprecated/DynamicVectorPkg_IntV_c.vhd                    | ** 2026.05 **  |
   | If Support Generic Packages                                   |          |
   |     If not XSIM                                               |          |
   |         ScoreboardGenericPkg.vhd                              | 2025.02  |
@@ -162,7 +173,7 @@ how to run it are in the scripts directory as well as Scripts_user_guide.pdf.
   |     deprecated/ScoreboardPkg_signed_c.vhd                     | 2024.07  |
   |     deprecated/ScoreboardPkg_unsigned_c.vhd                   | 2024.07  |
   |     deprecated/ScoreboardPkg_IntV_c.vhd                       | 2024.07  |
-  | MemorySupportPkg.vhd                                          | 2022.10  |
+  | MemorySupportPkg.vhd                                          | ** 2026.05 **   |
   | If Support Generic Packages                                   |          |
   |     If not XSIM                                               |          |
   |         MemoryGenericPkg.vhd                                  | 2024.09  |
@@ -174,11 +185,44 @@ how to run it are in the scripts directory as well as Scripts_user_guide.pdf.
   |     deprecated/MemoryPkg_orig_c.vhd                           | 2022.11  |
   | ReportPkg.vhd                                                 | 2024.07  |
   | If Supports2019ImpureFunctions and version >= 2019            |          |
-  |     TRUE    RandomPkg2019.vhd                                 | ** 2026.01 ** |
+  |     TRUE    RandomPkg2019.vhd                                 | 2026.01  |
   |     FALSE   deprecated/RandomPkg2019_c.vhd                    | 2024.09  |
-  | OsvvmContext.vhd                                              | ** 2026.01 ** |
+  | OsvvmContext.vhd                                              | ** 2026.05 **   |
   
+For VHDL-2019 releases, incorporated in VHDL Asserts into OSVVM ReportAlerts and Yaml ouput.
 
+###  AlertLogPkg.vhd    2026.05
+Most OSVVM data structures call AlertLogPkg.NewID to create an AlertLogID.   A new ReportMode, USE_PARENT_ID was added.   This allows data structures to use the parent ID rather than creating an ID.   This is appropriate for FIFOs where the only message is a FAILURE (and stop).  
+
+###  CoveragePkg.vhd    2026.05
+This release adds singleton methods WriteAllBins and GetNumIDs.   The file ID used by FileOpenWriteBin, named OsvvmCoverageWriteBinFile, is now in the declarative part of CoveragePkg (and hence visible).   
+
+CoveragePkg was refactored to separate the singleton implementation from the PT implementation. 
+
+###  CoveragePtPkg.vhd   2026.05
+Refactored the PT implementation from CoveragePtPkg.  The PT now interacts with the singleton using an ID (which it acquires on demand).  The HTML functional coverage reports now include PT created coverage models.   The PT implementation has a method, GetCoverageID, to retrieve the internal ID.   As a result, new singleton functionality can be accessed - with a little work using GetCoverageID.
+
+###  OsvvmContext.vhd   2026.05
+Added CoveragePtPkg.
+
+###  IdFifoPtPkg.vhd    2026.05
+FIFO for integer based IDs.  Used for updated ID allocation and deallocation.
+
+###  DynamicVectorGenericPkg.vhd and DynamicVectorPkg_instances.vhd    2026.05
+Dynamic vectors for VHDL that are similar to C/Rust/Ada vectors, SystemVerilog dynamic arrays,
+Python lists, and Java VectorLists.
+ 
+### MemorySupportPkg     2026.05
+Updated to support 64 bit implementations (as well as 32 bits) and to automatically select the size based the size your simulator is currently using.   
+
+### LanugageSupportPkg2019     2026.05
+Minor updates to calculation of TOOL_USES_32_BIT_INTEGERS.
+Added constant INTEGER_WIDTH.  
+
+### TbUtilPkg/TbUtilPkg_xilinx     2026.05
+Minor updates to WaitForClock to work around Xilinx Bugs  
+
+## Revision 2026.01 January/February 2026
 ###  AlertLogPkg.vhd   2026.01
 For VHDL-2019 releases, incorporated in VHDL Asserts into OSVVM ReportAlerts and Yaml ouput.
 

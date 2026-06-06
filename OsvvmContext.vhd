@@ -63,6 +63,7 @@ context OsvvmContext is
   use OSVVM.RandomBasePkg.all ;
   use OSVVM.RandomPkg.all ;
   use OSVVM.CoveragePkg.all ;
+  use OSVVM.CoveragePtPkg.all ;
   use OSVVM.DelayCoveragePkg.all ;
   use OSVVM.MemoryPkg.all ;
   use OSVVM.ResolutionPkg.all ;

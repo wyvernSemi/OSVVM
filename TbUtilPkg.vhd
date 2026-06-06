@@ -1033,13 +1033,13 @@ package body TbUtilPkg is
     if delay > OSVVM_SIM_RESOLUTION then
       wait for delay - OSVVM_SIM_RESOLUTION ;
     end if ;
-    wait until Clk ?= ClkActive ;
+    wait on Clk until Clk ?= ClkActive ;
   end procedure WaitForClock ;
 
   procedure WaitForClock ( signal Clk : in std_logic ;  constant NumberOfClocks : in natural := 1 ; constant ClkActive : in std_logic := CLK_ACTIVE) is
   begin
     for i in 1 to NumberOfClocks loop
-      wait until Clk ?= ClkActive ;
+      wait on Clk until Clk ?= ClkActive ;
     end loop ;
   end procedure WaitForClock ;
 

@@ -98,6 +98,8 @@ if {$::osvvm::Supports2019AssertApi  && $::osvvm::VhdlVersion >= 2019} {
 
 analyze AlertLogPkg.vhd
 
+analyze IdFifoPtPkg.vhd 
+
 if {$::osvvm::ToolName ne "XSIM"}  {
   analyze TbUtilPkg.vhd
 } else {
@@ -115,7 +117,13 @@ analyze RandomPkg.vhd [NoNullRangeWarning]
 # RandomProcedurePkg is a temporary and is used by CoveragePkg
 # Likely will be replaced when VHDL-2019 support is good.
 analyze RandomProcedurePkg.vhd
-analyze CoveragePkg.vhd [NoNullRangeWarning]
+
+if {$::osvvm::ToolName ne "XSIM"}  {
+  analyze CoveragePkg.vhd [NoNullRangeWarning]
+} else {
+  analyze deprecated/CoveragePkg_xilinx.vhd [NoNullRangeWarning]
+}
+analyze CoveragePtPkg.vhd 
 analyze DelayCoveragePkg.vhd
 
 if {[string compare $::osvvm::ClockResetVersion "2024.05"] == 1}  {
@@ -125,6 +133,14 @@ if {[string compare $::osvvm::ClockResetVersion "2024.05"] == 1}  {
 }
 
 analyze ResizePkg.vhd
+
+if {$::osvvm::VhdlVersion >= 2019 && $::osvvm::Supports2019Generics}  { 
+  analyze DynamicVectorGenericPkg.vhd 
+  analyze DynamicVectorPkg_instances.vhd
+} else {
+  analyze deprecated/DynamicVectorPkg_IntV_c.vhd 
+  analyze deprecated/DynamicVectorPkg_slv_c.vhd 
+}
 
 if {$::osvvm::ToolSupportsGenericPackages}  {
   if {$::osvvm::ToolName ne "XSIM"}  {

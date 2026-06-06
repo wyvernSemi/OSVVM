@@ -47,12 +47,18 @@ library ieee ;
 use ieee.std_logic_1164.all ; 
 use ieee.numeric_std.all ; 
 
+use work.IfElsePkg.all ; 
+
 package LanguageSupport2019Pkg is
   constant TOOL_USES_32_BIT_INTEGERS : boolean := 
-    -- GHDL does not support writing -2**31 so using -2**30 - 2**30
-    -- 2's complement               or  1's complement
-    (integer'left = -2**30 - 2**30) or (integer'left = 1 -2**30 - 2**30) ; 
+    -- GHDL does not support writing 2**31 - 1 so using 2**30
+    (integer'right = -1 + 2**30 + 2**30) ; 
+--!!    -- 2's complement               or  1's complement
+--!!    (integer'left = -2**30 - 2**30) or (integer'left = 1 -2**30 - 2**30) ; 
     
+  constant INTEGER_WIDTH : integer := 
+    IfElse(TOOL_USES_32_BIT_INTEGERS, 32, 64) ;
+
   ------------------------------------------------------------
   -- Language built in
   ------------------------------------------------------------

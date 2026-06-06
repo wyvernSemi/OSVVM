@@ -4785,8 +4785,12 @@ package body CoveragePkg is
         ReadLine(CovDbFile, buf) ;
         EmptyOrCommentLine(buf, Empty, MultiLineComment) ;
         exit ReadLoop when Empty or buf = NULL ;  
-        FieldNameArray(FieldNameIndex) := buf ; 
-        buf := NULL ; 
+--!! Xilinx 2025.02 fails here with elaboration error
+--        FieldNameArray(FieldNameIndex) := buf ; 
+--        buf := NULL ; 
+-- Tried the following work around but it did not work either
+--        FieldNameArray(FieldNameIndex) := new string'(buf.all) ; 
+        deallocate(buf) ;
         if FieldNameIndex = NumRangeItems then 
           CovStructPtr(ID.ID).FieldName := new FieldNameArrayType'(FieldNameArray) ;
         end if ; 
@@ -7826,6 +7830,7 @@ package body CoveragePkg is
       return iCovBin(1 to TotalBins) ;
     end if ; 
   end function MakeBin ;
+
 
   ------------------------------------------------------------
   -- package local, Used by GenBin, IllegalBin, and IgnoreBin

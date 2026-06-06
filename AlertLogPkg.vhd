@@ -27,6 +27,10 @@
 --
 --  Revision History:
 --    Date      Version    Description
+--    05/2026   2026.05    Added USE_PARENT_ID to AlertLogReportModeType.  Allows data structures to select to create an ID or use the parent ID.
+--                         Is an alternative to using DISABLED which creates an ID.
+--    01/2026   2026.01    Added reporting for VHDL asserts for tools that support it.
+--                         GetVhdlAlertCount to return AlertCountType with the current VHDL assert count.
 --    10/2025   2025.10    Connected settings from VhdlSettings:  ALERT_LOG_STOP_COUNT_FAILURE, ALERT_LOG_STOP_COUNT_ERROR, ALERT_LOG_STOP_COUNT_WARNING
 --                         Renamed GetAlertLogID (now alias) to GetID.
 --    02/2025   2025.02    Added NewReqID and FindID.  Updated requirement handling s.t. requirements can be anywhere in the hierarchy.
@@ -99,7 +103,7 @@
 --
 --  This file is part of OSVVM.
 --
---  Copyright (c) 2015 - 2025 by SynthWorks Design Inc.
+--  Copyright (c) 2015 - 2026 by SynthWorks Design Inc.
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.
@@ -146,7 +150,7 @@ package AlertLogPkg is
   type     LogType                  is (ALWAYS, DEBUG, FINAL, INFO, PASSED) ;  -- NEVER  -- See function IsLogEnableType
   subtype  LogIndexType             is LogType range DEBUG to PASSED ;
   type     LogEnableType            is array (LogIndexType) of boolean ;
-  type     AlertLogReportModeType   is (DISABLED, ENABLED, NONZERO) ;
+  type     AlertLogReportModeType   is (DISABLED, ENABLED, NONZERO, USE_PARENT_ID) ;
   type     AlertLogPrintParentType  is (PRINT_NAME, PRINT_NAME_AND_PARENT) ;
 
   constant  ALERT_LOG_STOP_COUNT_DEFAULT   : AlertCountType := (FAILURE => ALERT_LOG_STOP_COUNT_FAILURE, ERROR => ALERT_LOG_STOP_COUNT_ERROR, WARNING => ALERT_LOG_STOP_COUNT_WARNING) ;
@@ -160,6 +164,8 @@ package AlertLogPkg is
   -- May have its own ID or OSVVM_ALERTLOG_ID as default - most scoreboards allocate their own ID
   constant  OSVVM_SCOREBOARD_ALERTLOG_ID   : AlertLogIDType := OSVVM_ALERTLOG_ID ;
   constant  OSVVM_COVERAGE_ALERTLOG_ID     : AlertLogIDType := OSVVM_ALERTLOG_ID ;
+  constant  OSVVM_COVERAGE_PT_ALERTLOG_ID  : AlertLogIDType := OSVVM_ALERTLOG_ID ;
+  constant  OSVVM_DYNAMICVECTOR_ALERTLOG_ID : AlertLogIDType := OSVVM_ALERTLOG_ID ;
 
   -- Same as ALERTLOG_DEFAULT_ID
   constant  ALERT_DEFAULT_ID               : AlertLogIDType := ALERTLOG_DEFAULT_ID ;
@@ -6653,7 +6659,11 @@ package body AlertLogPkg is
       FailureInvalidParentID("NewID", ParentID) ; 
     end if ; 
 
-    result := AlertLogStruct.NewID(Name, localParentID, ParentIdSet, ReportMode, PrintParent, CreateHierarchy, Goal, PassedGoalSet) ;
+    if ReportMode = USE_PARENT_ID then 
+      result := localParentID ; 
+    else
+      result := AlertLogStruct.NewID(Name, localParentID, ParentIdSet, ReportMode, PrintParent, CreateHierarchy, Goal, PassedGoalSet) ;
+    end if ; 
     -- synthesis translate_on
     return result ;
   end function NewID ;

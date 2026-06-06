@@ -1040,6 +1040,7 @@ package body TbUtilPkg is
   begin
     for i in 1 to NumberOfClocks loop
       wait until Clk = ClkActive ;
+      wait for 0 ns ; -- Xilinx bug workaround for finding consecutive clock edges
     end loop ;
   end procedure WaitForClock ;
 
